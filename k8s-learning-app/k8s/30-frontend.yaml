@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: k8s-learn
+  labels:
+    app.kubernetes.io/name: web
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: k8s-learn
+  labels:
+    app.kubernetes.io/name: web
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: web
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: web
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101              # the nginx user in nginx:alpine
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: web
+          image: ghcr.io/REPLACE_ME/k8s-learn-web:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080   # not 80 — binding a low port needs a capability
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 15
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits: { memory: 128Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          # nginx needs writable paths for cache, pid and temp files. With a
+          # read-only root filesystem they have to be explicit emptyDir mounts.
+          volumeMounts:
+            - { name: cache, mountPath: /var/cache/nginx }
+            - { name: run,   mountPath: /var/run }
+            - { name: tmp,   mountPath: /tmp }
+      volumes:
+        - { name: cache, emptyDir: {} }
+        - { name: run,   emptyDir: {} }
+        - { name: tmp,   emptyDir: {} }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: web
+  namespace: k8s-learn
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: web

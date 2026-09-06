@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: k8s-learn
+  namespace: argocd          # the Application object lives with Argo, not with the app
+  finalizers:
+    # Without this, deleting the Application leaves every deployed resource
+    # orphaned in the cluster. With it, Argo cascades the delete.
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/REPLACE_ME/k8s-learning-app.git
+    targetRevision: main
+    path: k8s               # Argo runs `kustomize build` here automatically,
+                            # because the directory contains kustomization.yaml
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: k8s-learn
+
+  syncPolicy:
+    automated:
+      prune: true           # delete resources removed from git
+      selfHeal: true        # revert manual kubectl edits back to what git says
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+
+  # Argo will otherwise report the app as permanently OutOfSync, because these
+  # fields are changed by controllers rather than by git.
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas       # the HPA owns this, not git

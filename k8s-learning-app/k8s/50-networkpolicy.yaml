@@ -1,0 +1,77 @@
+# NetworkPolicies are DENY-BY-DEFAULT once any policy selects a Pod — but only if
+# your CNI enforces them. Flannel ignores them entirely; Calico, Cilium and most
+# managed clusters enforce them. If these appear to do nothing, that is why.
+---
+# 1. Baseline: deny all ingress to every Pod in the namespace. Everything below
+#    is an explicit exception to this rule.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: k8s-learn
+spec:
+  podSelector: {}          # {} means "every Pod in this namespace"
+  policyTypes: [Ingress]
+---
+# 2. The web tier accepts traffic only from the ingress controller.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: web-from-ingress
+  namespace: k8s-learn
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: web
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+# 3. The API accepts traffic from the ingress controller only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-from-ingress
+  namespace: k8s-learn
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: api
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 4000
+---
+# 4. Postgres accepts connections ONLY from the API Pods. This is the rule worth
+#    understanding: even if something else in the namespace is compromised, it
+#    cannot reach the database. Note it selects by LABEL, not by IP — Pod IPs
+#    change constantly, labels do not.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgres-from-api
+  namespace: k8s-learn
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: api
+      ports:
+        - protocol: TCP
+          port: 5432

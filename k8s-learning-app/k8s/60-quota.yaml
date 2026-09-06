@@ -1,0 +1,35 @@
+# Guard rails for the namespace. Neither is required to run the app — they are
+# here because they are two of the objects the site explains, and seeing them
+# reject something is more instructive than reading about them.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: k8s-learn-quota
+  namespace: k8s-learn
+spec:
+  hard:
+    requests.cpu: "2"
+    requests.memory: 4Gi
+    limits.memory: 8Gi
+    persistentvolumeclaims: "4"
+    count/deployments.apps: "10"
+    pods: "20"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: k8s-learn-limits
+  namespace: k8s-learn
+spec:
+  limits:
+    - type: Container
+      # Applied to any container that does not set its own. Once a ResourceQuota
+      # specifies requests.cpu, every Pod MUST have requests — a LimitRange is
+      # what stops that turning into "nothing can be scheduled".
+      defaultRequest:
+        cpu: 25m
+        memory: 64Mi
+      default:
+        memory: 256Mi
+      max:
+        memory: 1Gi

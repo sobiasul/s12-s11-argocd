@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+# Never commit a real Secret manifest
+k8s/*-secret.yaml

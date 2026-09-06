@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: k8s-learn
+  namespace: k8s-learn
+  annotations:
+    # Strip nothing: the API expects to receive /api/... exactly as sent.
+    nginx.ingress.kubernetes.io/use-regex: "false"
+    # Uncomment once cert-manager is installed to get automatic TLS:
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx      # must match an IngressClass that exists in your cluster
+  rules:
+    - host: k8s-learn.local    # add to /etc/hosts, or swap for a real DNS name
+      http:
+        paths:
+          # ORDER DOES NOT MATTER here, but SPECIFICITY does: the ingress controller
+          # matches the longest prefix first, so /api wins over / for API calls.
+          # Because both are served from ONE host, the browser sees a single
+          # origin — which is why the session cookie works with no CORS at all.
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 80
+  # TLS. Leave commented until cert-manager (or a manual secret) is in place —
+  # an Ingress referencing a missing secret serves a self-signed cert instead.
+  # tls:
+  #   - hosts: [k8s-learn.local]
+  #     secretName: k8s-learn-tls

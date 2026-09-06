@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: k8s-learn
+  labels:
+    name: k8s-learn
+    # Pod Security Admission. "restricted" is the strictest built-in profile:
+    # no privilege escalation, non-root only, all capabilities dropped, seccomp on.
+    # Enforcing it at the namespace means a Pod that violates it is REJECTED at
+    # admission rather than failing mysteriously later.
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/warn: restricted

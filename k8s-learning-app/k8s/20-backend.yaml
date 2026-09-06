@@ -1,0 +1,225 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: api
+  namespace: k8s-learn
+# This app never calls the Kubernetes API, so its ServiceAccount gets no Role at
+# all — and the token is not mounted (see automountServiceAccountToken below).
+# Least privilege starts here, not at the network layer.
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: k8s-learn
+  labels:
+    app.kubernetes.io/name: api
+spec:
+  type: ClusterIP          # internal only; the Ingress is the front door
+  selector:
+    app.kubernetes.io/name: api
+  ports:
+    - name: http
+      port: 80             # what other Pods dial: http://api.k8s-learn.svc:80
+      targetPort: http     # resolves to the container's named port (4000)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: k8s-learn
+  labels:
+    app.kubernetes.io/name: api
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0     # never drop below the desired count during a rollout
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "4000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: api
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+
+      # Spread replicas across nodes. Without this the scheduler is free to put
+      # both Pods on one node, and that node going down takes the whole API with it.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: api
+
+      # initContainers run to completion, in order, BEFORE any app container
+      # starts. Two jobs here, and both exist to solve real ordering problems.
+      initContainers:
+        # 1. Do not start until the database answers. Without this the API would
+        #    crash-loop for the 20-30s Postgres takes to initialise, which looks
+        #    like a broken deployment when it is only a slow one.
+        - name: wait-for-postgres
+          image: postgres:16-alpine
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h postgres -p 5432 -U k8slearn; do
+                echo "waiting for postgres..."
+                sleep 2
+              done
+              echo "postgres is ready"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits: { memory: 64Mi }
+
+        # 2. Run migrations exactly once per rollout, from the SAME image as the
+        #    app. If this ran in the app container instead, 2 replicas would race
+        #    to alter the same schema.
+        - name: migrate
+          image: ghcr.io/REPLACE_ME/k8s-learn-api:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: RUN_MIGRATIONS_ONLY
+              value: "true"
+          envFrom:
+            - configMapRef: { name: api-config }
+            - secretRef: { name: api-secrets }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 256Mi }
+
+      containers:
+        - name: api
+          image: ghcr.io/REPLACE_ME/k8s-learn-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 4000
+          envFrom:
+            - configMapRef: { name: api-config }
+            - secretRef: { name: api-secrets }
+
+          # Three probes, three different questions. Getting these wrong is the
+          # single most common cause of a deployment that "works but keeps
+          # restarting".
+          #
+          # startup:   has it finished booting? Suppresses the other two until then,
+          #            so a slow start is never mistaken for a hang.
+          startupProbe:
+            httpGet: { path: /startupz, port: http }
+            periodSeconds: 2
+            failureThreshold: 30        # allows up to 60s to come up
+          # readiness: should it receive traffic? Checks the DB. Failing removes
+          #            the Pod from Service endpoints but leaves it running.
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # liveness:  is the process wedged? Deliberately does NOT touch the DB.
+          #            If it did, a Postgres blip would restart every API Pod and
+          #            turn a small outage into a large one.
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: 50m           # what the scheduler reserves
+              memory: 128Mi
+            limits:
+              memory: 512Mi      # exceed this and the container is OOMKilled
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true    # nothing writes to disk; see logger.ts
+            capabilities:
+              drop: ["ALL"]
+
+          # A read-only root filesystem still needs somewhere for temp files.
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+
+          # Give in-flight requests time to finish before SIGTERM. Kubernetes
+          # removes the Pod from endpoints and sends SIGTERM at the same moment,
+          # so without this pause a few requests are routed to a dying Pod.
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 5"]
+
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api
+  namespace: k8s-learn
+spec:
+  # During VOLUNTARY disruption (a node drain, a cluster upgrade) keep at least
+  # one Pod serving. This does not protect against a node crashing — nothing can —
+  # it stops an administrator from draining every node at once.
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: api
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api
+  namespace: k8s-learn
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          # Percentage of the REQUEST (50m), not the limit. With requests set this
+          # low, 70% is 35m — scaling will feel eager. That is a useful thing to
+          # watch happen while learning. Requires metrics-server to be installed.
+          averageUtilization: 70
+  behavior:
+    scaleDown:
+      # Wait 5 minutes of sustained low load before scaling in, so a brief lull
+      # does not cause flapping.
+      stabilizationWindowSeconds: 300

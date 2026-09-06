@@ -1,0 +1,112 @@
+# A StatefulSet, not a Deployment. The difference matters:
+#   - stable network identity: the Pod is always postgres-0, reachable at
+#     postgres-0.postgres.k8s-learn.svc.cluster.local
+#   - stable storage: volumeClaimTemplates gives each replica its OWN PVC, and
+#     that PVC survives the Pod being deleted or rescheduled
+#   - ordered, one-at-a-time rollouts instead of all Pods at once
+# A Deployment with a PVC would have every replica fighting over one volume.
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: k8s-learn
+  labels:
+    app.kubernetes.io/name: postgres
+spec:
+  # clusterIP: None makes this a HEADLESS service. DNS returns the Pod IPs
+  # directly instead of a single virtual IP — which is how stable per-Pod DNS
+  # names work. StatefulSets require this.
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: k8s-learn
+spec:
+  serviceName: postgres          # must match the headless Service above
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999            # the postgres user in the official image
+        fsGroup: 999              # makes the mounted volume group-writable by it
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: k8slearn
+            - name: POSTGRES_DB
+              value: k8slearn
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: api-secrets
+                  key: POSTGRES_PASSWORD
+            # The official image refuses to initialise into a non-empty directory,
+            # and a mounted volume usually contains lost+found. A subdirectory
+            # sidesteps it — a classic first-time StatefulSet failure.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          # pg_isready is the right check: "is the server accepting connections",
+          # not "is the process alive".
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U k8slearn -d k8slearn -h 127.0.0.1"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U k8slearn -d k8slearn -h 127.0.0.1"]
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 4
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              # No CPU limit on purpose: CPU is compressible, and a limit here
+              # causes throttling under load for no benefit. Memory IS limited,
+              # because memory is not compressible — exceeding it means OOMKill.
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+  # Each replica gets its own PersistentVolumeClaim from this template. Deleting
+  # the StatefulSet does NOT delete these claims — that is deliberate, and it is
+  # why you cannot lose a database by running `kubectl delete statefulset`.
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi
+        # storageClassName: standard   # uncomment and set for your cluster

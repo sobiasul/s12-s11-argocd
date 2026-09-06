@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: k8s-learn
+
+resources:
+  - 00-namespace.yaml
+  - 01-config.yaml
+  - 10-postgres.yaml
+  - 20-backend.yaml
+  - 30-frontend.yaml
+  - 40-ingress.yaml
+  - 50-networkpolicy.yaml
+  - 60-quota.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: k8s-learn
+
+# Set your registry and tag in one place instead of editing every manifest.
+images:
+  - name: ghcr.io/REPLACE_ME/k8s-learn-api
+    newName: ghcr.io/REPLACE_ME/k8s-learn-api
+    newTag: latest
+  - name: ghcr.io/REPLACE_ME/k8s-learn-web
+    newName: ghcr.io/REPLACE_ME/k8s-learn-web
+    newTag: latest

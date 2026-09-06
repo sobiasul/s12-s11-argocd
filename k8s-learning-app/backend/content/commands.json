@@ -1,0 +1,3135 @@
+[
+  {
+    "id": "version-client-server",
+    "category": "Getting Started & Context",
+    "command": "kubectl version",
+    "description": "Print the kubectl client version and, if a cluster is reachable, the server version.",
+    "example": "kubectl version -o yaml",
+    "notes": "Keep kubectl within one minor version of the API server; a client more than one minor behind or ahead is unsupported and can silently mangle newer fields. The old --short flag was deprecated in 1.24 and removed in 1.28 - the plain output is already short. Use --client to skip contacting the server entirely.",
+    "danger": false,
+    "tags": [
+      "version",
+      "basics",
+      "compatibility"
+    ]
+  },
+  {
+    "id": "cluster-info",
+    "category": "Getting Started & Context",
+    "command": "kubectl cluster-info",
+    "description": "Show the API server endpoint and the addresses of core cluster services.",
+    "example": "kubectl cluster-info",
+    "notes": "This is the fastest way to confirm which cluster your current context actually points at before you run something destructive. It only proves the control plane answers - it says nothing about node health.",
+    "danger": false,
+    "tags": [
+      "cluster",
+      "basics",
+      "connectivity"
+    ]
+  },
+  {
+    "id": "config-view",
+    "category": "Getting Started & Context",
+    "command": "kubectl config view",
+    "description": "Print the merged kubeconfig that kubectl is actually using, with credentials redacted.",
+    "example": "kubectl config view --minify",
+    "notes": "--minify trims the output to just the current context, which is what you usually want. Secrets are shown as REDACTED unless you add --raw. If KUBECONFIG lists several files, this shows the merged result - which is often the explanation for a context you did not expect.",
+    "danger": false,
+    "tags": [
+      "config",
+      "kubeconfig",
+      "context"
+    ]
+  },
+  {
+    "id": "config-view-raw",
+    "category": "Getting Started & Context",
+    "command": "kubectl config view --raw",
+    "description": "Print the merged kubeconfig including client certificates and tokens in full.",
+    "example": "kubectl config view --raw --minify > standalone-kubeconfig.yaml",
+    "notes": "This writes real credentials to stdout. Never paste the output into a ticket or a chat. Combined with --minify it is the standard way to extract a single-cluster kubeconfig to hand to CI.",
+    "danger": false,
+    "tags": [
+      "config",
+      "kubeconfig",
+      "secrets"
+    ]
+  },
+  {
+    "id": "config-get-contexts",
+    "category": "Getting Started & Context",
+    "command": "kubectl config get-contexts",
+    "description": "List every context in the kubeconfig and mark the current one with an asterisk.",
+    "example": "kubectl config get-contexts -o name",
+    "notes": "The NAMESPACE column shows each context's default namespace - a blank there means 'default'. -o name prints bare names, which is handy for shell completion and scripts.",
+    "danger": false,
+    "tags": [
+      "context",
+      "config",
+      "inspect"
+    ]
+  },
+  {
+    "id": "config-current-context",
+    "category": "Getting Started & Context",
+    "command": "kubectl config current-context",
+    "description": "Print the name of the context kubectl will use for the next command.",
+    "example": "kubectl config current-context",
+    "notes": "Worth putting in your shell prompt. Most production incidents caused by kubectl start with running the right command against the wrong context.",
+    "danger": false,
+    "tags": [
+      "context",
+      "config",
+      "safety"
+    ]
+  },
+  {
+    "id": "config-use-context",
+    "category": "Getting Started & Context",
+    "command": "kubectl config use-context <context-name>",
+    "description": "Switch the active context so subsequent commands target a different cluster or user.",
+    "example": "kubectl config use-context staging-eu-west",
+    "notes": "This mutates the kubeconfig file on disk, so it changes the context for every shell on the machine, not just this one. If you want a change scoped to one terminal, use the global --context flag per command or point KUBECONFIG at a copy.",
+    "danger": false,
+    "tags": [
+      "context",
+      "config",
+      "switch"
+    ]
+  },
+  {
+    "id": "config-set-namespace",
+    "category": "Getting Started & Context",
+    "command": "kubectl config set-context --current --namespace=<namespace>",
+    "description": "Change the default namespace for the current context so you can stop typing -n everywhere.",
+    "example": "kubectl config set-context --current --namespace=payments",
+    "notes": "The single most useful kubectl config command. Note it edits the kubeconfig on disk and affects all shells using it. Setting --namespace= (empty) puts you back on 'default'.",
+    "danger": false,
+    "tags": [
+      "namespace",
+      "context",
+      "config"
+    ]
+  },
+  {
+    "id": "config-set-context-new",
+    "category": "Getting Started & Context",
+    "command": "kubectl config set-context <name> --cluster=<cluster> --user=<user> --namespace=<namespace>",
+    "description": "Create or modify a named context that binds a cluster, a user and a default namespace together.",
+    "example": "kubectl config set-context prod-payments --cluster=prod --user=admin --namespace=payments",
+    "notes": "Handy for making a per-team context against the same cluster. The cluster and user must already exist in the kubeconfig - set-context does not create them, and it will happily create a context that points at nothing.",
+    "danger": false,
+    "tags": [
+      "context",
+      "config",
+      "create"
+    ]
+  },
+  {
+    "id": "kubeconfig-env",
+    "category": "Getting Started & Context",
+    "command": "KUBECONFIG=<path> kubectl get pods",
+    "description": "Use an alternate kubeconfig file for a single command without touching your default one.",
+    "example": "KUBECONFIG=~/.kube/prod.yaml kubectl get pods -n payments",
+    "notes": "KUBECONFIG accepts a colon-separated list of files and kubectl merges them, with earlier files winning on conflicts. Keeping prod in its own file and only exporting it deliberately is a cheap and effective blast-radius control.",
+    "danger": false,
+    "tags": [
+      "config",
+      "kubeconfig",
+      "safety"
+    ]
+  },
+  {
+    "id": "global-context-flag",
+    "category": "Getting Started & Context",
+    "command": "kubectl --context=<context> get pods -n <namespace>",
+    "description": "Run one command against a specific context without switching your active context.",
+    "example": "kubectl --context=prod get pods -n payments",
+    "notes": "Safer than use-context for one-off reads against production, because you cannot forget to switch back. --context and --namespace are global flags and work on every subcommand.",
+    "danger": false,
+    "tags": [
+      "context",
+      "safety",
+      "namespace"
+    ]
+  },
+  {
+    "id": "api-resources",
+    "category": "Getting Started & Context",
+    "command": "kubectl api-resources",
+    "description": "List every resource type the cluster serves, with its short name, API group and whether it is namespaced.",
+    "example": "kubectl api-resources --api-group=apps",
+    "notes": "This is the authoritative list of what exists on THIS cluster, including CRDs installed by operators. The SHORTNAMES column is where you learn that deployments is 'deploy' and that you can type 'po', 'svc', 'ns', 'cm'.",
+    "danger": false,
+    "tags": [
+      "discovery",
+      "api",
+      "crd"
+    ]
+  },
+  {
+    "id": "api-resources-namespaced-list",
+    "category": "Getting Started & Context",
+    "command": "kubectl api-resources --verbs=list --namespaced -o name",
+    "description": "List the names of all namespaced resource types that support listing - the building block for 'show me everything in this namespace'.",
+    "example": "kubectl api-resources --verbs=list --namespaced -o name | xargs -n1 kubectl get --show-kind --ignore-not-found -n payments",
+    "notes": "The pipeline in the example is the real answer to 'why doesn't kubectl get all show my ConfigMaps' - `get all` covers only a curated handful of types. Filtering by --verbs=list avoids errors from types you cannot enumerate, and --ignore-not-found keeps the output clean.",
+    "danger": false,
+    "tags": [
+      "discovery",
+      "api",
+      "namespace",
+      "inventory"
+    ]
+  },
+  {
+    "id": "api-versions",
+    "category": "Getting Started & Context",
+    "command": "kubectl api-versions",
+    "description": "List every API group/version enabled on the cluster.",
+    "example": "kubectl api-versions | sort",
+    "notes": "Use this to check whether an apiVersion in your manifest is actually served before you debug a confusing 'no matches for kind' error. That error means the group/version is missing here - usually a CRD that is not installed or a beta API removed in a newer Kubernetes.",
+    "danger": false,
+    "tags": [
+      "discovery",
+      "api",
+      "versions"
+    ]
+  },
+  {
+    "id": "explain",
+    "category": "Getting Started & Context",
+    "command": "kubectl explain <resource>.<field-path>",
+    "description": "Print inline documentation for a resource or a specific field, straight from the schema the server is running.",
+    "example": "kubectl explain deployment.spec.strategy",
+    "notes": "Better than the website because it reflects your cluster's actual version and includes CRDs. Field paths use dots and skip list indexes: `kubectl explain pod.spec.containers.resources` works.",
+    "danger": false,
+    "tags": [
+      "docs",
+      "schema",
+      "learning"
+    ]
+  },
+  {
+    "id": "explain-recursive",
+    "category": "Getting Started & Context",
+    "command": "kubectl explain <resource> --recursive",
+    "description": "Print the full nested field tree of a resource without the per-field prose.",
+    "example": "kubectl explain pod.spec --recursive",
+    "notes": "The fastest way to find the exact spelling of a deeply nested field - pipe it to grep. Output is large, so always target a subtree (pod.spec) rather than the whole resource.",
+    "danger": false,
+    "tags": [
+      "docs",
+      "schema",
+      "learning"
+    ]
+  },
+  {
+    "id": "completion-shell",
+    "category": "Getting Started & Context",
+    "command": "source <(kubectl completion <shell>)",
+    "description": "Enable tab completion for resource names, namespaces and flags in your shell.",
+    "example": "source <(kubectl completion bash)",
+    "notes": "Supported shells are bash, zsh, fish and powershell. Add it to your shell rc file to make it permanent. Completion queries the API server live, so tab-completing a pod name is also a quick check that your context works.",
+    "danger": false,
+    "tags": [
+      "shell",
+      "productivity",
+      "setup"
+    ]
+  },
+  {
+    "id": "verbose-request-logging",
+    "category": "Getting Started & Context",
+    "command": "kubectl get <resource> --v=<level>",
+    "description": "Raise kubectl's log verbosity to see the HTTP requests it makes and the raw responses.",
+    "example": "kubectl get pods --v=8",
+    "notes": "--v=6 shows request URLs, --v=8 adds request and response bodies, --v=9 adds full untruncated payloads. This is how you find out what kubectl is actually asking the API server when a command behaves strangely. Response bodies can include Secret contents, so do not paste them around.",
+    "danger": false,
+    "tags": [
+      "debug",
+      "api",
+      "verbose"
+    ]
+  },
+  {
+    "id": "get-pods",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get pods",
+    "description": "List the pods in the current namespace with their ready count, status, restarts and age.",
+    "example": "kubectl get pods",
+    "notes": "READY is ready-containers/total-containers, so 1/2 means one container in the pod is failing its readiness probe. A non-zero RESTARTS column with a recent timestamp in parentheses is the first sign of a crash loop.",
+    "danger": false,
+    "tags": [
+      "pods",
+      "inspect",
+      "basics"
+    ]
+  },
+  {
+    "id": "get-pods-wide",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get pods -o wide",
+    "description": "List pods with extra columns including pod IP, the node they run on, and nominated node.",
+    "example": "kubectl get pods -o wide -n kube-system",
+    "notes": "-o wide is the cheapest way to answer 'which node is this on'. It works on almost every resource type and adds different useful columns for each - on nodes it shows OS image, kernel and container runtime; on services it shows the selector.",
+    "danger": false,
+    "tags": [
+      "pods",
+      "inspect",
+      "nodes"
+    ]
+  },
+  {
+    "id": "get-pods-all-namespaces",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get pods --all-namespaces",
+    "description": "List pods across every namespace you have permission to read.",
+    "example": "kubectl get pods -A -o wide",
+    "notes": "-A is the short form. Note that with -A the NAMESPACE column appears first, which breaks scripts that assume the name is column one. It also ignores any -n flag you pass alongside it.",
+    "danger": false,
+    "tags": [
+      "pods",
+      "namespace",
+      "inspect"
+    ]
+  },
+  {
+    "id": "get-all",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get all",
+    "description": "List the common workload and service resources in the current namespace.",
+    "example": "kubectl get all -n payments",
+    "notes": "Badly named: 'all' is a fixed shortlist (pods, services, deployments, replicasets, statefulsets, daemonsets, jobs, cronjobs, replicationcontrollers). It does NOT include ConfigMaps, Secrets, Ingresses, PVCs, ServiceAccounts, NetworkPolicies or any CRD. Never trust it as a namespace inventory before deleting things.",
+    "danger": false,
+    "tags": [
+      "inspect",
+      "namespace",
+      "overview"
+    ]
+  },
+  {
+    "id": "get-multiple-types",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get <type1>,<type2>,<type3>",
+    "description": "List several resource types in one command, grouped in a single output.",
+    "example": "kubectl get deploy,svc,ingress -n payments",
+    "notes": "Comma-separated with no spaces. This is the practical version of `get all` - you name the types you actually care about, including CRDs. Add -o wide and it applies to every type in the list.",
+    "danger": false,
+    "tags": [
+      "inspect",
+      "multi",
+      "overview"
+    ]
+  },
+  {
+    "id": "get-yaml",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get <resource> <name> -o yaml",
+    "description": "Print the full stored object as YAML, including defaults the server filled in and current status.",
+    "example": "kubectl get pod payments-api-7d9f8-x2klm -o yaml",
+    "notes": "This is the ground truth for 'what did the cluster actually store', not what your manifest said. It is not directly re-appliable: strip metadata.resourceVersion, uid, creationTimestamp and status first. Since 1.21 managedFields is hidden by default; add --show-managed-fields to see server-side-apply ownership.",
+    "danger": false,
+    "tags": [
+      "inspect",
+      "yaml",
+      "output"
+    ]
+  },
+  {
+    "id": "describe-pod",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl describe <resource> <name>",
+    "description": "Show a human-readable summary of an object plus the recent events referencing it.",
+    "example": "kubectl describe pod payments-api-7d9f8-x2klm",
+    "notes": "The Events section at the bottom is the point - it tells you about failed scheduling, image pull errors and probe failures that never appear in `get`. Events expire (one hour by default in many clusters), so an old broken pod may describe with no events at all.",
+    "danger": false,
+    "tags": [
+      "debug",
+      "inspect",
+      "events"
+    ]
+  },
+  {
+    "id": "get-by-label-selector",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get <resource> -l <key>=<value>",
+    "description": "List only the resources carrying a matching label.",
+    "example": "kubectl get pods -l app=payments-api,tier=backend",
+    "notes": "Comma-separated selectors are ANDed. Labels are the primary way Kubernetes wires things together, so if a Service has no endpoints, running `get pods -l <the service's selector>` is the fastest way to prove nothing matches.",
+    "danger": false,
+    "tags": [
+      "labels",
+      "selector",
+      "inspect"
+    ]
+  },
+  {
+    "id": "get-set-based-selector",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get <resource> -l '<key> in (<v1>,<v2>)'",
+    "description": "Select resources using set-based label expressions: in, notin, existence and non-existence.",
+    "example": "kubectl get pods -l 'environment in (staging,production),!canary'",
+    "notes": "Quote the whole selector so the shell does not eat the parentheses or the '!'. Supported forms are `key in (a,b)`, `key notin (a,b)`, `key` (exists) and `!key` (does not exist). `key!=value` also works in the equality syntax.",
+    "danger": false,
+    "tags": [
+      "labels",
+      "selector",
+      "advanced"
+    ]
+  },
+  {
+    "id": "get-show-labels",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get <resource> --show-labels",
+    "description": "Add a column listing every label on each object.",
+    "example": "kubectl get pods --show-labels",
+    "notes": "The quickest way to discover what you can select on. For Deployment-managed pods you will see a pod-template-hash label - that is what the ReplicaSet uses to own its pods, and it is why selecting on it pins you to one rollout revision.",
+    "danger": false,
+    "tags": [
+      "labels",
+      "inspect"
+    ]
+  },
+  {
+    "id": "get-label-columns",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get <resource> -L <label-key>",
+    "description": "Add one column per named label instead of dumping all labels.",
+    "example": "kubectl get nodes -L topology.kubernetes.io/zone,node.kubernetes.io/instance-type",
+    "notes": "Capital -L takes label keys and makes columns; lowercase -l filters. Objects missing the label show an empty cell rather than being hidden, which makes this good for spotting unlabelled stragglers.",
+    "danger": false,
+    "tags": [
+      "labels",
+      "output",
+      "inspect"
+    ]
+  },
+  {
+    "id": "get-field-selector",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get <resource> --field-selector <field>=<value>",
+    "description": "Filter on object fields rather than labels, evaluated server-side.",
+    "example": "kubectl get pods --field-selector status.phase=Running",
+    "notes": "Only a small, per-type set of fields is indexed - for pods that is mainly metadata.name, metadata.namespace, spec.nodeName, spec.schedulerName, status.phase and status.podIP. Anything else returns 'field label not supported'. Supports = , == and !=, ANDed by commas.",
+    "danger": false,
+    "tags": [
+      "selector",
+      "filter",
+      "advanced"
+    ]
+  },
+  {
+    "id": "get-pods-on-node",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get pods --all-namespaces --field-selector spec.nodeName=<node>",
+    "description": "List every pod scheduled onto a specific node.",
+    "example": "kubectl get pods -A -o wide --field-selector spec.nodeName=ip-10-0-3-17.ec2.internal",
+    "notes": "The command you run before draining a node, to see what you are about to move. It is filtered server-side, so it is much cheaper than listing all pods and grepping. `kubectl describe node <node>` shows the same list plus resource allocation.",
+    "danger": false,
+    "tags": [
+      "nodes",
+      "pods",
+      "selector"
+    ]
+  },
+  {
+    "id": "get-not-running",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get pods --all-namespaces --field-selector status.phase!=Running",
+    "description": "Show every pod that is not currently in the Running phase - a quick cluster health sweep.",
+    "example": "kubectl get pods -A --field-selector status.phase!=Running,status.phase!=Succeeded",
+    "notes": "Add status.phase!=Succeeded to hide completed Jobs, which otherwise dominate the output on any cluster running CronJobs. Remember this still will not surface CrashLoopBackOff - check the STATUS column of a plain get for that.",
+    "danger": false,
+    "tags": [
+      "debug",
+      "selector",
+      "health"
+    ]
+  },
+  {
+    "id": "get-watch",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get <resource> --watch",
+    "description": "Print the current list and then stream every change to it until you interrupt.",
+    "example": "kubectl get pods -w -l app=payments-api",
+    "notes": "-w is the short form. It appends rows rather than redrawing a table, so the columns drift and old rows stay on screen - many people prefer `watch -n1 kubectl get pods` for a stable view. Use --watch-only to skip the initial listing and see only new changes.",
+    "danger": false,
+    "tags": [
+      "watch",
+      "live",
+      "inspect"
+    ]
+  },
+  {
+    "id": "get-sort-by-restarts",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get pods --sort-by=.status.containerStatuses[0].restartCount",
+    "description": "Rank pods by how many times their first container has restarted, surfacing the flappiest workloads.",
+    "example": "kubectl get pods -A --sort-by=.status.containerStatuses[0].restartCount",
+    "notes": "Indexed at [0], so it only considers the first container in multi-container pods - good enough as a triage sweep, misleading for sidecar-heavy pods. Pods with no containerStatuses yet (still Pending) sort as if zero.",
+    "danger": false,
+    "tags": [
+      "sort",
+      "debug",
+      "restarts"
+    ]
+  },
+  {
+    "id": "get-deployments",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get deployments",
+    "description": "List deployments with desired, up-to-date and available replica counts.",
+    "example": "kubectl get deploy -n payments",
+    "notes": "READY is available/desired while UP-TO-DATE counts replicas already running the newest pod template. UP-TO-DATE lagging behind desired during a rollout is normal; it stalling there is not.",
+    "danger": false,
+    "tags": [
+      "deployments",
+      "workloads",
+      "inspect"
+    ]
+  },
+  {
+    "id": "get-replicasets",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get replicasets",
+    "description": "List ReplicaSets, including the old ones a Deployment keeps around for rollback.",
+    "example": "kubectl get rs -l app=payments-api",
+    "notes": "Each Deployment revision is a separate ReplicaSet; ones scaled to 0 are previous revisions retained per spec.revisionHistoryLimit (default 10). Two ReplicaSets with non-zero replicas means a rollout is in flight or wedged.",
+    "danger": false,
+    "tags": [
+      "replicasets",
+      "rollout",
+      "inspect"
+    ]
+  },
+  {
+    "id": "get-services",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get services",
+    "description": "List services with their type, cluster IP, external IP and ports.",
+    "example": "kubectl get svc -A",
+    "notes": "An EXTERNAL-IP stuck on <pending> for a LoadBalancer means no cloud controller is provisioning it - normal on bare metal or kind without MetalLB. CLUSTER-IP of 'None' marks a headless service, which returns pod IPs from DNS instead of load balancing.",
+    "danger": false,
+    "tags": [
+      "services",
+      "networking",
+      "inspect"
+    ]
+  },
+  {
+    "id": "get-endpointslices",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get endpointslices -l kubernetes.io/service-name=<service>",
+    "description": "Show the actual backend pod IPs a Service is currently routing to.",
+    "example": "kubectl get endpointslices -l kubernetes.io/service-name=payments-api -o yaml",
+    "notes": "This is the definitive answer to 'my Service returns connection refused'. No endpoints means the selector matches nothing, or the matched pods are failing readiness probes - only Ready pods are listed as ready endpoints. The older `kubectl get endpoints` shows the same idea in a more compact but deprecated form.",
+    "danger": false,
+    "tags": [
+      "services",
+      "networking",
+      "debug"
+    ]
+  },
+  {
+    "id": "get-ingress",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get ingress",
+    "description": "List ingress objects with their class, hosts, address and ports.",
+    "example": "kubectl get ing -A",
+    "notes": "An empty ADDRESS usually means no ingress controller has claimed the object - check that spec.ingressClassName matches an installed IngressClass (`kubectl get ingressclass`). The Ingress object itself does nothing without a controller.",
+    "danger": false,
+    "tags": [
+      "ingress",
+      "networking",
+      "inspect"
+    ]
+  },
+  {
+    "id": "get-pvc-pv",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get pvc,pv",
+    "description": "List persistent volume claims and the volumes they are bound to.",
+    "example": "kubectl get pvc,pv -A",
+    "notes": "A PVC stuck in Pending is almost always a missing or mismatched StorageClass, or a WaitForFirstConsumer class waiting for a pod to be scheduled. Check the PV's RECLAIM POLICY before deleting a PVC: Delete destroys the underlying disk, Retain keeps it.",
+    "danger": false,
+    "tags": [
+      "storage",
+      "pvc",
+      "inspect"
+    ]
+  },
+  {
+    "id": "get-hpa",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get hpa",
+    "description": "List HorizontalPodAutoscalers with their current and target metrics and replica counts.",
+    "example": "kubectl get hpa -A",
+    "notes": "TARGETS showing <unknown> means the HPA cannot read metrics - metrics-server is missing, or the pods have no resource requests set, which is mandatory for CPU-percentage targets. Use describe hpa to see the scaling events and the reason.",
+    "danger": false,
+    "tags": [
+      "autoscaling",
+      "hpa",
+      "inspect"
+    ]
+  },
+  {
+    "id": "get-pdb",
+    "category": "Viewing & Finding Resources",
+    "command": "kubectl get poddisruptionbudgets",
+    "description": "List PodDisruptionBudgets and how many disruptions they currently allow.",
+    "example": "kubectl get pdb -A",
+    "notes": "ALLOWED DISRUPTIONS of 0 is exactly why your `kubectl drain` is hanging. A PDB with minAvailable equal to the replica count can block node maintenance forever - check this before blaming the drain.",
+    "danger": false,
+    "tags": [
+      "pdb",
+      "drain",
+      "availability"
+    ]
+  },
+  {
+    "id": "apply-file",
+    "category": "Creating & Applying",
+    "command": "kubectl apply -f <file.yaml>",
+    "description": "Create or update resources so the cluster matches the manifest - the standard declarative workflow.",
+    "example": "kubectl apply -f deployment.yaml",
+    "notes": "Unlike create, apply is idempotent and safe to re-run. It records the manifest in a last-applied-configuration annotation and uses it to work out which fields you removed, so fields you never set are left alone rather than reset - that is how apply coexists with an HPA changing replicas.",
+    "danger": false,
+    "tags": [
+      "apply",
+      "declarative",
+      "basics"
+    ]
+  },
+  {
+    "id": "apply-directory",
+    "category": "Creating & Applying",
+    "command": "kubectl apply -f <directory>/ --recursive",
+    "description": "Apply every manifest in a directory tree in one command.",
+    "example": "kubectl apply -f ./manifests/ -R",
+    "notes": "-R is the short form; without it, subdirectories are ignored. Files are applied in alphabetical order, which is why people prefix manifests with numbers when ordering matters (namespace before the things inside it).",
+    "danger": false,
+    "tags": [
+      "apply",
+      "declarative",
+      "bulk"
+    ]
+  },
+  {
+    "id": "apply-url",
+    "category": "Creating & Applying",
+    "command": "kubectl apply -f <url>",
+    "description": "Apply a manifest fetched directly over HTTP(S).",
+    "example": "kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.8/config/manifests/metallb-native.yaml",
+    "notes": "Convenient for installing operators, but you are executing whatever is at that URL against your cluster today - always pin a tag or commit rather than a branch, and read the manifest first on anything you care about.",
+    "danger": false,
+    "tags": [
+      "apply",
+      "install",
+      "security"
+    ]
+  },
+  {
+    "id": "apply-stdin",
+    "category": "Creating & Applying",
+    "command": "kubectl apply -f -",
+    "description": "Read the manifest from standard input, so you can pipe or heredoc a resource without creating a file.",
+    "example": "cat <<EOF | kubectl apply -f -\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: demo\ndata:\n  greeting: hello\nEOF",
+    "notes": "The `-f -` form works on apply, create, delete, replace and diff. It is the standard way to chain generators: `kubectl create ... --dry-run=client -o yaml | kubectl apply -f -`.",
+    "danger": false,
+    "tags": [
+      "apply",
+      "stdin",
+      "scripting"
+    ]
+  },
+  {
+    "id": "apply-kustomize",
+    "category": "Creating & Applying",
+    "command": "kubectl apply -k <directory>",
+    "description": "Build a kustomization directory and apply the result to the cluster.",
+    "example": "kubectl apply -k ./overlays/production",
+    "notes": "The directory must contain a kustomization.yaml. kubectl ships its own (usually older) copy of kustomize, so a feature that works with the standalone `kustomize` binary may not work here - check `kubectl version` against the kustomize changelog if a build behaves differently.",
+    "danger": false,
+    "tags": [
+      "kustomize",
+      "apply",
+      "overlays"
+    ]
+  },
+  {
+    "id": "kustomize-build",
+    "category": "Creating & Applying",
+    "command": "kubectl kustomize <directory>",
+    "description": "Render a kustomization to YAML on stdout without touching the cluster.",
+    "example": "kubectl kustomize ./overlays/production > rendered.yaml",
+    "notes": "Always render before applying when you are unsure what an overlay does - patches and name prefixes make the output quite different from the base. Pipe into `kubectl diff -f -` to preview against the live cluster.",
+    "danger": false,
+    "tags": [
+      "kustomize",
+      "render",
+      "dry-run"
+    ]
+  },
+  {
+    "id": "apply-dry-run-client",
+    "category": "Creating & Applying",
+    "command": "kubectl apply -f <file> --dry-run=client -o yaml",
+    "description": "Render what kubectl would send, without contacting the cluster to validate or persist it.",
+    "example": "kubectl apply -f deployment.yaml --dry-run=client -o yaml",
+    "notes": "Client dry-run only checks that the YAML parses locally - it will happily accept a nonexistent field or an unknown kind. For real validation you want --dry-run=server. The old --dry-run boolean and -o yaml pairing was replaced by this three-valued flag in 1.18.",
+    "danger": false,
+    "tags": [
+      "dry-run",
+      "validation",
+      "apply"
+    ]
+  },
+  {
+    "id": "apply-dry-run-server",
+    "category": "Creating & Applying",
+    "command": "kubectl apply -f <file> --dry-run=server",
+    "description": "Send the request to the API server for full validation and admission processing, but do not persist anything.",
+    "example": "kubectl apply -f deployment.yaml --dry-run=server -o yaml",
+    "notes": "This is the real preflight check: it runs schema validation, defaulting, and validating admission webhooks, so it catches bad field names, policy rejections and quota problems that client dry-run misses. Mutating webhooks run too, so the returned object shows what would actually be stored.",
+    "danger": false,
+    "tags": [
+      "dry-run",
+      "validation",
+      "admission"
+    ]
+  },
+  {
+    "id": "diff",
+    "category": "Creating & Applying",
+    "command": "kubectl diff -f <file>",
+    "description": "Show what applying a manifest would change, as a diff against the live objects.",
+    "example": "kubectl diff -f ./manifests/ -R",
+    "notes": "The review step before every apply. It exits 1 when there are differences and 0 when there are none, so wrap it carefully under `set -e` in CI. It runs a server-side dry run under the hood, so the diff includes server defaulting and mutating webhooks. Set KUBECTL_EXTERNAL_DIFF to use your own diff tool.",
+    "danger": false,
+    "tags": [
+      "diff",
+      "review",
+      "safety"
+    ]
+  },
+  {
+    "id": "apply-server-side",
+    "category": "Creating & Applying",
+    "command": "kubectl apply -f <file> --server-side",
+    "description": "Apply using server-side apply, so the API server tracks field ownership instead of relying on a client-side annotation.",
+    "example": "kubectl apply -f deployment.yaml --server-side --field-manager=deploy-pipeline",
+    "notes": "Server-side apply records which manager owns which field in metadata.managedFields, giving real conflict detection when two controllers fight over a field. It also avoids the annotation size limit that breaks client-side apply on very large CRDs. Conflicts are errors until you add --force-conflicts.",
+    "danger": false,
+    "tags": [
+      "apply",
+      "server-side",
+      "advanced"
+    ]
+  },
+  {
+    "id": "apply-force-conflicts",
+    "category": "Creating & Applying",
+    "command": "kubectl apply -f <file> --server-side --force-conflicts",
+    "description": "Take ownership of fields another field manager currently owns during a server-side apply.",
+    "example": "kubectl apply -f deployment.yaml --server-side --force-conflicts",
+    "notes": "This deliberately overrides another controller's claim on a field. If that controller is an operator or an HPA, it will likely fight you back on its next reconcile - understand why the conflict exists before forcing it.",
+    "danger": true,
+    "tags": [
+      "apply",
+      "server-side",
+      "conflict"
+    ]
+  },
+  {
+    "id": "create-file",
+    "category": "Creating & Applying",
+    "command": "kubectl create -f <file.yaml>",
+    "description": "Create resources from a manifest, failing if they already exist.",
+    "example": "kubectl create -f job.yaml",
+    "notes": "Use apply for anything you will update again. create is right when 'already exists' should be an error - and it is the only option for objects with generateName, which apply cannot handle because there is no stable name to match on.",
+    "danger": false,
+    "tags": [
+      "create",
+      "imperative"
+    ]
+  },
+  {
+    "id": "replace-file",
+    "category": "Creating & Applying",
+    "command": "kubectl replace -f <file.yaml>",
+    "description": "Overwrite an existing object wholesale with the contents of the manifest.",
+    "example": "kubectl replace -f deployment.yaml",
+    "notes": "Unlike apply, replace is a full overwrite: any field not present in your file is removed, including ones a controller set. The manifest must carry a current metadata.resourceVersion, so the usual pattern is `kubectl get ... -o yaml > f && edit && kubectl replace -f f`.",
+    "danger": true,
+    "tags": [
+      "replace",
+      "imperative",
+      "overwrite"
+    ]
+  },
+  {
+    "id": "replace-force",
+    "category": "Creating & Applying",
+    "command": "kubectl replace --force -f <file.yaml>",
+    "description": "Delete the existing object and recreate it from the manifest.",
+    "example": "kubectl replace --force -f pod.yaml",
+    "notes": "This is a delete plus a create, not an update - the object gets a new UID, and for a Pod that means downtime and lost state. It is the escape hatch for changing immutable fields (a Job's selector, a Service's clusterIP), not a routine update.",
+    "danger": true,
+    "tags": [
+      "replace",
+      "force",
+      "recreate",
+      "downtime"
+    ]
+  },
+  {
+    "id": "create-deployment",
+    "category": "Creating & Applying",
+    "command": "kubectl create deployment <name> --image=<image>",
+    "description": "Create a Deployment imperatively from an image, without writing YAML.",
+    "example": "kubectl create deployment payments-api --image=ghcr.io/acme/payments:1.4.2 --replicas=3 --port=8080",
+    "notes": "Good for demos and for scaffolding: add --dry-run=client -o yaml to get a starting manifest you then edit. Supports --replicas and --port; note that --port only sets containerPort, it does not create a Service.",
+    "danger": false,
+    "tags": [
+      "deployment",
+      "create",
+      "imperative",
+      "scaffold"
+    ]
+  },
+  {
+    "id": "create-generate-yaml",
+    "category": "Creating & Applying",
+    "command": "kubectl create <resource> <name> <flags> --dry-run=client -o yaml",
+    "description": "Use an imperative create command purely as a YAML generator instead of touching the cluster.",
+    "example": "kubectl create deployment payments-api --image=nginx:1.27 --dry-run=client -o yaml > deployment.yaml",
+    "notes": "The single best trick for learning manifest structure and for passing the CKAD quickly - you get correct apiVersion, kind and required fields for free. The generated YAML includes empty creationTimestamp and status stanzas that are harmless but worth deleting before committing.",
+    "danger": false,
+    "tags": [
+      "scaffold",
+      "dry-run",
+      "yaml",
+      "learning"
+    ]
+  },
+  {
+    "id": "run-pod",
+    "category": "Creating & Applying",
+    "command": "kubectl run <name> --image=<image>",
+    "description": "Create a single bare Pod from an image.",
+    "example": "kubectl run nginx --image=nginx:1.27 --port=80",
+    "notes": "Since 1.18 `run` only ever creates a Pod - the --generator flag that once made Deployments and Jobs is gone. A bare pod is not restarted or rescheduled if its node dies, so use `create deployment` for anything meant to stay running. `run` is for throwaway debug pods.",
+    "danger": false,
+    "tags": [
+      "run",
+      "pods",
+      "imperative",
+      "deprecation"
+    ]
+  },
+  {
+    "id": "expose-deployment",
+    "category": "Creating & Applying",
+    "command": "kubectl expose deployment <name> --port=<port> --target-port=<port>",
+    "description": "Create a Service in front of an existing workload, reusing that workload's labels as the selector.",
+    "example": "kubectl expose deployment payments-api --port=80 --target-port=8080 --type=ClusterIP --name=payments-api",
+    "notes": "--port is the port the Service listens on; --target-port is the container port it forwards to. Because expose derives the selector from the workload's labels, it cannot go wrong the way a hand-written selector can. --type accepts ClusterIP, NodePort, LoadBalancer and ExternalName.",
+    "danger": false,
+    "tags": [
+      "service",
+      "networking",
+      "create",
+      "imperative"
+    ]
+  },
+  {
+    "id": "create-job-from-cronjob",
+    "category": "Creating & Applying",
+    "command": "kubectl create job <name> --from=cronjob/<cronjob-name>",
+    "description": "Trigger a CronJob immediately by creating a Job from its template.",
+    "example": "kubectl create job nightly-report-manual --from=cronjob/nightly-report",
+    "notes": "The correct way to run a scheduled task on demand - it copies the CronJob's job template exactly, so you test the real thing. The Job it creates is independent of the CronJob's history and concurrency policy, so it can overlap with a scheduled run.",
+    "danger": false,
+    "tags": [
+      "jobs",
+      "cronjobs",
+      "batch",
+      "manual-run"
+    ]
+  },
+  {
+    "id": "create-cronjob",
+    "category": "Creating & Applying",
+    "command": "kubectl create cronjob <name> --image=<image> --schedule=\"<cron-expression>\" -- <command>",
+    "description": "Create a CronJob that runs on a recurring schedule.",
+    "example": "kubectl create cronjob nightly-report --image=ghcr.io/acme/report:2.1 --schedule=\"0 2 * * *\" -- /app/report",
+    "notes": "The schedule is evaluated in the kube-controller-manager's timezone (UTC on most clusters) unless the CronJob sets spec.timeZone, which is only available from 1.27. Quote the schedule so the shell does not expand the asterisks.",
+    "danger": false,
+    "tags": [
+      "cronjobs",
+      "batch",
+      "create",
+      "schedule"
+    ]
+  },
+  {
+    "id": "edit-resource",
+    "category": "Updating & Patching",
+    "command": "kubectl edit <resource> <name>",
+    "description": "Open a live object in your editor and apply whatever you save.",
+    "example": "kubectl edit deployment payments-api",
+    "notes": "Set KUBE_EDITOR (or EDITOR) to choose the editor. Changes take effect the moment you save and exit, with no diff and no review - and they are invisible to whatever Git repo owns this manifest, so the next CI apply silently reverts them. Great for triage, bad as a habit. Add -o json if you prefer editing JSON.",
+    "danger": true,
+    "tags": [
+      "edit",
+      "imperative",
+      "live-change"
+    ]
+  },
+  {
+    "id": "patch-strategic",
+    "category": "Updating & Patching",
+    "command": "kubectl patch <resource> <name> -p '<json>'",
+    "description": "Apply a strategic merge patch to a live object, changing only the fields you name.",
+    "example": "kubectl patch deployment payments-api -p '{\"spec\":{\"replicas\":5}}'",
+    "notes": "Strategic merge is the default and is Kubernetes-aware: it merges lists of containers by name rather than replacing the whole list, which is what you want when tweaking one container. It only works on built-in types - CRDs have no strategic merge metadata and fall back to needing --type=merge.",
+    "danger": true,
+    "tags": [
+      "patch",
+      "strategic-merge",
+      "live-change"
+    ]
+  },
+  {
+    "id": "patch-merge",
+    "category": "Updating & Patching",
+    "command": "kubectl patch <resource> <name> --type=merge -p '<json>'",
+    "description": "Apply an RFC 7386 JSON merge patch, which replaces whole lists rather than merging them.",
+    "example": "kubectl patch deployment payments-api --type=merge -p '{\"metadata\":{\"annotations\":{\"owner\":\"payments-team\"}}}'",
+    "notes": "This is the type that works on custom resources. Beware that any array you include replaces the existing array wholesale - patching one container into spec.containers with --type=merge deletes the sidecars. Setting a value to null removes the key.",
+    "danger": true,
+    "tags": [
+      "patch",
+      "merge-patch",
+      "crd",
+      "live-change"
+    ]
+  },
+  {
+    "id": "patch-json",
+    "category": "Updating & Patching",
+    "command": "kubectl patch <resource> <name> --type=json -p '[{\"op\":\"<op>\",\"path\":\"<path>\",\"value\":<value>}]'",
+    "description": "Apply an RFC 6902 JSON patch, an ordered list of explicit add/replace/remove operations.",
+    "example": "kubectl patch deployment payments-api --type=json -p '[{\"op\":\"replace\",\"path\":\"/spec/template/spec/containers/0/image\",\"value\":\"ghcr.io/acme/payments:1.5.0\"}]'",
+    "notes": "The only patch type that can delete a specific array element or address a list by index. Paths are JSON Pointers, so / in a key must be escaped as ~1 and ~ as ~0 - annotation keys like kubernetes.io/name become kubernetes.io~1name. A 'replace' on a path that does not exist fails; use 'add'.",
+    "danger": true,
+    "tags": [
+      "patch",
+      "json-patch",
+      "advanced",
+      "live-change"
+    ]
+  },
+  {
+    "id": "patch-subresource-scale",
+    "category": "Updating & Patching",
+    "command": "kubectl patch <resource> <name> --subresource=scale --type=merge -p '{\"spec\":{\"replicas\":<n>}}'",
+    "description": "Patch the scale subresource directly rather than the main object.",
+    "example": "kubectl patch deployment payments-api --subresource=scale --type=merge -p '{\"spec\":{\"replicas\":4}}'",
+    "notes": "--subresource landed in 1.24 and went GA in 1.29; it also accepts 'status'. Patching the scale subresource is what `kubectl scale` does internally and is the correct way to resize a custom resource that implements scale. Older kubectl versions will reject the flag.",
+    "danger": true,
+    "tags": [
+      "patch",
+      "subresource",
+      "scale",
+      "advanced"
+    ]
+  },
+  {
+    "id": "label-add",
+    "category": "Updating & Patching",
+    "command": "kubectl label <resource> <name> <key>=<value>",
+    "description": "Add a label to an existing object.",
+    "example": "kubectl label pod payments-api-7d9f8-x2klm environment=production",
+    "notes": "Fails if the label already exists with a different value - add --overwrite to change it. Relabelling a pod can move it in or out of a Service's selector immediately, which is the basis of the manual 'pull a pod out of rotation to debug it' trick.",
+    "danger": false,
+    "tags": [
+      "labels",
+      "metadata",
+      "update"
+    ]
+  },
+  {
+    "id": "label-remove",
+    "category": "Updating & Patching",
+    "command": "kubectl label <resource> <name> <key>-",
+    "description": "Remove a label by suffixing the key with a minus sign.",
+    "example": "kubectl label pod payments-api-7d9f8-x2klm environment-",
+    "notes": "The trailing dash is the removal syntax and works the same way for annotations and for `set env`. Removing a label that a Service selects on immediately drops that pod from the Service's endpoints.",
+    "danger": false,
+    "tags": [
+      "labels",
+      "metadata",
+      "update"
+    ]
+  },
+  {
+    "id": "label-bulk",
+    "category": "Updating & Patching",
+    "command": "kubectl label <resource> --all <key>=<value>",
+    "description": "Label every object of a type in the namespace, or use -l to label a matching subset.",
+    "example": "kubectl label pods -l app=payments-api tier=backend --overwrite",
+    "notes": "--all means all objects of that type in the namespace, not all namespaces. Use -l to target a subset; combining --all with -l is not meaningful. This is the standard way to backfill an ownership or cost-allocation label across a namespace.",
+    "danger": false,
+    "tags": [
+      "labels",
+      "bulk",
+      "update"
+    ]
+  },
+  {
+    "id": "annotate",
+    "category": "Updating & Patching",
+    "command": "kubectl annotate <resource> <name> <key>=<value>",
+    "description": "Attach an annotation - arbitrary non-identifying metadata - to an object.",
+    "example": "kubectl annotate deployment payments-api kubernetes.io/change-cause=\"rollback to 1.4.2\" --overwrite",
+    "notes": "Annotations cannot be selected on, unlike labels, but they have no value-format restrictions and can hold large blobs. Many controllers are driven entirely by annotations (ingress-nginx behaviour, cert-manager issuers), so annotating is often how you configure a third-party component.",
+    "danger": false,
+    "tags": [
+      "annotations",
+      "metadata",
+      "update"
+    ]
+  },
+  {
+    "id": "set-image",
+    "category": "Updating & Patching",
+    "command": "kubectl set image <resource>/<name> <container>=<image>",
+    "description": "Change a container's image, triggering a rolling update.",
+    "example": "kubectl set image deployment/payments-api payments-api=ghcr.io/acme/payments:1.5.0",
+    "notes": "The container name on the left must match spec.template.spec.containers[].name, not the image name - getting this wrong silently changes nothing and reports success on older versions. Use `*=<image>` to set every container. Setting the same tag with a new digest does NOT trigger a rollout; use `rollout restart` for that.",
+    "danger": true,
+    "tags": [
+      "deploy",
+      "image",
+      "rollout",
+      "update"
+    ]
+  },
+  {
+    "id": "set-env",
+    "category": "Updating & Patching",
+    "command": "kubectl set env <resource>/<name> <KEY>=<VALUE>",
+    "description": "Set an environment variable on a workload's pod template, triggering a rolling update.",
+    "example": "kubectl set env deployment/payments-api LOG_LEVEL=debug",
+    "notes": "Applies to all containers in the template unless you narrow it with -c. Use KEY- to remove a variable and --list to print the current ones without changing anything. Every invocation is a new pod template revision, so bumping three variables in three commands means three rollouts.",
+    "danger": true,
+    "tags": [
+      "env",
+      "config",
+      "rollout",
+      "update"
+    ]
+  },
+  {
+    "id": "set-env-from-configmap",
+    "category": "Updating & Patching",
+    "command": "kubectl set env <resource>/<name> --from=configmap/<configmap-name>",
+    "description": "Inject every key of a ConfigMap or Secret as environment variables via envFrom.",
+    "example": "kubectl set env deployment/payments-api --from=configmap/payments-config --prefix=APP_",
+    "notes": "Works with secret/<name> too. --prefix namespaces the injected variable names. Note that changing the ConfigMap afterwards does NOT restart the pods - env vars are read once at container start, so you need `kubectl rollout restart` to pick up new values.",
+    "danger": true,
+    "tags": [
+      "env",
+      "configmap",
+      "secrets",
+      "update"
+    ]
+  },
+  {
+    "id": "set-env-list",
+    "category": "Updating & Patching",
+    "command": "kubectl set env <resource>/<name> --list",
+    "description": "Print the environment variables currently defined on a workload without modifying it.",
+    "example": "kubectl set env deployment/payments-api --list --resolve",
+    "notes": "A read-only use of a write command - safe to run anywhere. Add --resolve to display the values behind ConfigMap and Secret references rather than just the reference itself, which is worth knowing before you run it on a shared screen.",
+    "danger": false,
+    "tags": [
+      "env",
+      "inspect",
+      "config"
+    ]
+  },
+  {
+    "id": "set-resources",
+    "category": "Updating & Patching",
+    "command": "kubectl set resources <resource>/<name> --limits=<r>=<v> --requests=<r>=<v>",
+    "description": "Set CPU and memory requests and limits on a workload, triggering a rolling update.",
+    "example": "kubectl set resources deployment/payments-api --limits=cpu=1,memory=1Gi --requests=cpu=200m,memory=256Mi",
+    "notes": "Requests drive scheduling and are what an HPA's CPU percentage is measured against; limits drive throttling and OOM-kills. Narrow to one container with -c, otherwise it hits all of them including sidecars. Pass an empty value (--limits=cpu=0) to remove a limit.",
+    "danger": true,
+    "tags": [
+      "resources",
+      "limits",
+      "rollout",
+      "update"
+    ]
+  },
+  {
+    "id": "set-selector",
+    "category": "Updating & Patching",
+    "command": "kubectl set selector <resource>/<name> '<key>=<value>'",
+    "description": "Change the selector on a Service so it routes to a different set of pods.",
+    "example": "kubectl set selector service/payments-api 'app=payments-api,version=green'",
+    "notes": "The mechanism behind a manual blue/green cutover: flip the Service selector between two label values and traffic moves instantly. Effective immediately with no rollout, and equally instant if you point it at labels nothing has - always confirm with `kubectl get endpointslices` afterwards.",
+    "danger": true,
+    "tags": [
+      "service",
+      "selector",
+      "traffic",
+      "blue-green"
+    ]
+  },
+  {
+    "id": "apply-view-last-applied",
+    "category": "Updating & Patching",
+    "command": "kubectl apply view-last-applied <resource> <name>",
+    "description": "Print the manifest that was most recently applied to an object, as recorded in its annotation.",
+    "example": "kubectl apply view-last-applied deployment payments-api",
+    "notes": "Shows what the last `kubectl apply` sent, which is often very different from the current live object after someone ran edit or patch. Diffing this against `get -o yaml` is a quick way to spot out-of-band changes. Objects created with server-side apply or with create do not have this annotation.",
+    "danger": false,
+    "tags": [
+      "apply",
+      "audit",
+      "inspect"
+    ]
+  },
+  {
+    "id": "scale-deployment",
+    "category": "Scaling & Rollouts",
+    "command": "kubectl scale <resource>/<name> --replicas=<n>",
+    "description": "Set the replica count of a Deployment, StatefulSet, ReplicaSet or ReplicationController.",
+    "example": "kubectl scale deployment/payments-api --replicas=5",
+    "notes": "Takes effect immediately. If an HPA manages this workload it will simply overwrite your number at its next evaluation, usually within 15-30 seconds - scale the HPA's min/max instead, or the change will not stick.",
+    "danger": true,
+    "tags": [
+      "scale",
+      "replicas",
+      "deployment"
+    ]
+  },
+  {
+    "id": "scale-to-zero",
+    "category": "Scaling & Rollouts",
+    "command": "kubectl scale <resource>/<name> --replicas=0",
+    "description": "Stop a workload without deleting it, by scaling it down to no replicas.",
+    "example": "kubectl scale deployment/payments-api --replicas=0",
+    "notes": "The polite way to take something offline: the object, its config and its history all survive, so scaling back up restores it exactly. Remember the previous replica count before you do this, because nothing records it for you.",
+    "danger": true,
+    "tags": [
+      "scale",
+      "stop",
+      "maintenance"
+    ]
+  },
+  {
+    "id": "scale-conditional",
+    "category": "Scaling & Rollouts",
+    "command": "kubectl scale <resource>/<name> --current-replicas=<n> --replicas=<m>",
+    "description": "Scale only if the workload currently has the replica count you expect.",
+    "example": "kubectl scale deployment/payments-api --current-replicas=3 --replicas=6",
+    "notes": "A cheap optimistic-concurrency guard for scripts: if something else already changed the count, the command fails rather than clobbering it. Well worth using in any automation that scales production.",
+    "danger": true,
+    "tags": [
+      "scale",
+      "safety",
+      "scripting"
+    ]
+  },
+  {
+    "id": "scale-all",
+    "category": "Scaling & Rollouts",
+    "command": "kubectl scale <resource> --all --replicas=<n> -n <namespace>",
+    "description": "Scale every workload of a type in a namespace at once.",
+    "example": "kubectl scale deployments --all --replicas=0 -n staging",
+    "notes": "The standard 'shut down the whole environment overnight' command, and equally the standard way to take out a namespace by mistake. There is no confirmation and no record of the previous counts - capture them first with `kubectl get deploy -o custom-columns=NAME:.metadata.name,R:.spec.replicas`.",
+    "danger": true,
+    "tags": [
+      "scale",
+      "bulk",
+      "namespace",
+      "risky"
+    ]
+  },
+  {
+    "id": "autoscale",
+    "category": "Scaling & Rollouts",
+    "command": "kubectl autoscale <resource>/<name> --min=<n> --max=<m> --cpu-percent=<pct>",
+    "description": "Create a HorizontalPodAutoscaler targeting a workload's average CPU utilisation.",
+    "example": "kubectl autoscale deployment payments-api --min=2 --max=10 --cpu-percent=70",
+    "notes": "The percentage is measured against the pods' CPU *requests*, so a workload with no CPU request can never be autoscaled this way and the HPA will report <unknown>. This generates an autoscaling/v1-shaped HPA; for memory or custom metrics you need to write the v2 manifest yourself.",
+    "danger": false,
+    "tags": [
+      "autoscaling",
+      "hpa",
+      "create"
+    ]
+  },
+  {
+    "id": "rollout-status",
+    "category": "Scaling & Rollouts",
+    "command": "kubectl rollout status <resource>/<name>",
+    "description": "Watch a rollout until it completes, then exit zero - or non-zero if it fails.",
+    "example": "kubectl rollout status deployment/payments-api --timeout=5m",
+    "notes": "The right way to gate a CI pipeline on a deploy actually succeeding. Without --timeout it blocks indefinitely on a stuck rollout, which will hang your pipeline; with it, the command exits non-zero when the deadline passes. Use --watch=false for a single status snapshot.",
+    "danger": false,
+    "tags": [
+      "rollout",
+      "deploy",
+      "ci",
+      "wait"
+    ]
+  },
+  {
+    "id": "rollout-history",
+    "category": "Scaling & Rollouts",
+    "command": "kubectl rollout history <resource>/<name>",
+    "description": "List the revisions of a workload that you can roll back to.",
+    "example": "kubectl rollout history deployment/payments-api",
+    "notes": "The CHANGE-CAUSE column is populated from the kubernetes.io/change-cause annotation and is empty unless someone set it - the old --record flag that filled it automatically is deprecated and gone. Revisions are stored as ReplicaSets, capped by spec.revisionHistoryLimit (default 10).",
+    "danger": false,
+    "tags": [
+      "rollout",
+      "history",
+      "audit"
+    ]
+  },
+  {
+    "id": "rollout-history-revision",
+    "category": "Scaling & Rollouts",
+    "command": "kubectl rollout history <resource>/<name> --revision=<n>",
+    "description": "Show the full pod template stored for one specific revision.",
+    "example": "kubectl rollout history deployment/payments-api --revision=4",
+    "notes": "This is how you check what image and env a revision actually contained before rolling back to it - do this rather than assuming revision 4 is the version you remember.",
+    "danger": false,
+    "tags": [
+      "rollout",
+      "history",
+      "inspect"
+    ]
+  },
+  {
+    "id": "rollout-undo",
+    "category": "Scaling & Rollouts",
+    "command": "kubectl rollout undo <resource>/<name>",
+    "description": "Roll a workload back to its previous revision.",
+    "example": "kubectl rollout undo deployment/payments-api",
+    "notes": "The fastest incident response you have. Note it rolls back only the pod template - ConfigMaps, Secrets and database migrations do not come back with it, which is why a rollback of an app that already migrated the schema can make things worse. The undo itself becomes a new revision number.",
+    "danger": true,
+    "tags": [
+      "rollout",
+      "rollback",
+      "incident"
+    ]
+  },
+  {
+    "id": "rollout-undo-to-revision",
+    "category": "Scaling & Rollouts",
+    "command": "kubectl rollout undo <resource>/<name> --to-revision=<n>",
+    "description": "Roll back to a specific numbered revision rather than the immediately previous one.",
+    "example": "kubectl rollout undo deployment/payments-api --to-revision=4",
+    "notes": "Confirm the revision's contents with `rollout history --revision=<n>` first. --to-revision=0 is the explicit way to say 'the previous one', which is the default. Revisions older than revisionHistoryLimit have been garbage collected and are simply not available.",
+    "danger": true,
+    "tags": [
+      "rollout",
+      "rollback",
+      "incident"
+    ]
+  },
+  {
+    "id": "rollout-restart",
+    "category": "Scaling & Rollouts",
+    "command": "kubectl rollout restart <resource>/<name>",
+    "description": "Perform a rolling restart of every pod in a workload without changing its spec.",
+    "example": "kubectl rollout restart deployment/payments-api",
+    "notes": "Works by stamping a kubectl.kubernetes.io/restartedAt annotation on the pod template, so it honours your rolling update strategy and surge/unavailable settings rather than dropping everything at once. This is how you make pods pick up a changed ConfigMap or Secret, or re-pull a mutable tag like :latest.",
+    "danger": true,
+    "tags": [
+      "rollout",
+      "restart",
+      "configmap",
+      "operations"
+    ]
+  },
+  {
+    "id": "rollout-pause",
+    "category": "Scaling & Rollouts",
+    "command": "kubectl rollout pause <resource>/<name>",
+    "description": "Freeze a Deployment so spec changes do not trigger new rollouts.",
+    "example": "kubectl rollout pause deployment/payments-api",
+    "notes": "Lets you batch several edits (image, env, resources) into one rollout instead of three, and is also a canary tool - pause mid-rollout to hold a mixed set of old and new pods while you watch metrics. A paused deployment silently ignores your changes until resumed, which confuses whoever finds it next.",
+    "danger": false,
+    "tags": [
+      "rollout",
+      "pause",
+      "canary"
+    ]
+  },
+  {
+    "id": "rollout-resume",
+    "category": "Scaling & Rollouts",
+    "command": "kubectl rollout resume <resource>/<name>",
+    "description": "Unfreeze a paused Deployment and let the accumulated changes roll out.",
+    "example": "kubectl rollout resume deployment/payments-api",
+    "notes": "Everything you changed while paused rolls out as a single revision. If you forgot what was queued, check with `kubectl diff` or compare `rollout history` against the live spec before resuming.",
+    "danger": true,
+    "tags": [
+      "rollout",
+      "resume",
+      "deploy"
+    ]
+  },
+  {
+    "id": "rollout-statefulset",
+    "category": "Scaling & Rollouts",
+    "command": "kubectl rollout status statefulset/<name>",
+    "description": "Track a StatefulSet rollout, which updates pods in reverse ordinal order.",
+    "example": "kubectl rollout status statefulset/postgres -n data",
+    "notes": "StatefulSets update from the highest ordinal down and wait for each pod to become Ready before proceeding, so a pod that never becomes Ready blocks the whole rollout permanently. spec.updateStrategy.rollingUpdate.partition can pin the update to only the highest ordinals - a built-in canary for stateful workloads.",
+    "danger": false,
+    "tags": [
+      "rollout",
+      "statefulset",
+      "wait"
+    ]
+  },
+  {
+    "id": "describe-pod-debug",
+    "category": "Debugging & Troubleshooting",
+    "command": "kubectl describe pod <pod>",
+    "description": "The first command to run on any misbehaving pod: shows container state, probe config, volumes and recent events.",
+    "example": "kubectl describe pod payments-api-7d9f8-x2klm",
+    "notes": "Read three things in order: State/Last State (with the exit code and reason), the Events list at the bottom, and the Conditions block. Exit code 137 means SIGKILL - usually an OOM kill, confirmed by Reason: OOMKilled. Exit code 1 is the app itself failing, so go to the logs.",
+    "danger": false,
+    "tags": [
+      "debug",
+      "pods",
+      "triage",
+      "events"
+    ]
+  },
+  {
+    "id": "get-pod-status-yaml",
+    "category": "Debugging & Troubleshooting",
+    "command": "kubectl get pod <pod> -o yaml",
+    "description": "Read the pod's full status block, including per-container state, restart counts and conditions.",
+    "example": "kubectl get pod payments-api-7d9f8-x2klm -o yaml",
+    "notes": "status.containerStatuses[].lastState.terminated holds the exit code and reason of the previous run - the machine-readable version of what describe summarises. status.conditions tells you whether the failure is scheduling (PodScheduled false) or readiness (ContainersReady false).",
+    "danger": false,
+    "tags": [
+      "debug",
+      "pods",
+      "yaml",
+      "status"
+    ]
+  },
+  {
+    "id": "debug-ephemeral-container",
+    "category": "Debugging & Troubleshooting",
+    "command": "kubectl debug -it <pod> --image=<image> --target=<container>",
+    "description": "Attach an ephemeral debug container to a running pod, sharing its namespaces, without restarting it.",
+    "example": "kubectl debug -it payments-api-7d9f8-x2klm --image=nicolaka/netshoot --target=payments-api",
+    "notes": "The correct answer to 'the container has no shell'. --target shares the process namespace with that container so you can see and strace its processes; without --target you only share the network namespace. Ephemeral containers cannot be removed - they stay on the pod until it is deleted - and they cannot declare resource requests or ports.",
+    "danger": false,
+    "tags": [
+      "debug",
+      "ephemeral",
+      "distroless",
+      "exec"
+    ]
+  },
+  {
+    "id": "debug-copy-pod",
+    "category": "Debugging & Troubleshooting",
+    "command": "kubectl debug <pod> -it --copy-to=<new-name> --image=<image>",
+    "description": "Make a copy of a running pod with a debug container added, leaving the original untouched.",
+    "example": "kubectl debug payments-api-7d9f8-x2klm -it --copy-to=payments-debug --image=nicolaka/netshoot --share-processes",
+    "notes": "Use this when the pod is serving traffic and you do not want to disturb it - the copy has the same spec but is not behind the Service, since it lacks the ReplicaSet's pod-template-hash label. --share-processes makes all containers' processes visible. The copy is a bare pod you must delete yourself.",
+    "danger": false,
+    "tags": [
+      "debug",
+      "copy",
+      "ephemeral",
+      "safe"
+    ]
+  },
+  {
+    "id": "debug-copy-change-command",
+    "category": "Debugging & Troubleshooting",
+    "command": "kubectl debug <pod> -it --copy-to=<new-name> --container=<container> -- <command>",
+    "description": "Copy a pod but replace one container's command, for example to stop a crash-looping entrypoint and get a shell instead.",
+    "example": "kubectl debug payments-api-7d9f8-x2klm -it --copy-to=payments-shell --container=payments-api -- sh",
+    "notes": "The way into a container that crashes on startup: same image, same env, same mounts, but it sits at a shell instead of dying. You can then run the real entrypoint by hand and watch it fail properly.",
+    "danger": false,
+    "tags": [
+      "debug",
+      "crashloop",
+      "copy"
+    ]
+  },
+  {
+    "id": "debug-node",
+    "category": "Debugging & Troubleshooting",
+    "command": "kubectl debug node/<node> -it --image=<image>",
+    "description": "Start a privileged debug pod on a node with the host filesystem mounted, for node-level troubleshooting.",
+    "example": "kubectl debug node/ip-10-0-3-17.ec2.internal -it --image=ubuntu",
+    "notes": "The node's root filesystem appears at /host inside the container, and the pod shares the host's network, PID and IPC namespaces - `chroot /host` gives you an effective node shell without SSH. This is a highly privileged operation that most clusters restrict via Pod Security admission, and the debug pod stays until you delete it.",
+    "danger": true,
+    "tags": [
+      "debug",
+      "node",
+      "privileged",
+      "ssh-alternative"
+    ]
+  },
+  {
+    "id": "debug-profile",
+    "category": "Debugging & Troubleshooting",
+    "command": "kubectl debug -it <pod> --image=<image> --profile=<profile>",
+    "description": "Apply a predefined security and capability profile to the debug container.",
+    "example": "kubectl debug -it payments-api-7d9f8-x2klm --image=nicolaka/netshoot --profile=netadmin",
+    "notes": "Profiles are legacy, general, baseline, restricted, netadmin and sysadmin. 'netadmin' adds NET_ADMIN and NET_RAW so tcpdump and iptables work; 'restricted' satisfies the restricted Pod Security Standard, which is what you need on a locked-down cluster. Went GA in 1.28.",
+    "danger": false,
+    "tags": [
+      "debug",
+      "security",
+      "netadmin",
+      "ephemeral"
+    ]
+  },
+  {
+    "id": "run-temporary-debug-pod",
+    "category": "Debugging & Troubleshooting",
+    "command": "kubectl run <name> --rm -it --image=<image> --restart=Never -- <command>",
+    "description": "Launch a throwaway pod, drop into a shell, and have it deleted automatically when you exit.",
+    "example": "kubectl run tmp-shell --rm -it --image=nicolaka/netshoot --restart=Never -- /bin/bash",
+    "notes": "The workhorse for testing DNS, connectivity and Service reachability from inside the cluster. --rm only cleans up if the command exits normally - if your terminal dies, the pod is orphaned, so check for leftovers. --restart=Never makes it a bare Pod rather than something that respawns.",
+    "danger": false,
+    "tags": [
+      "debug",
+      "run",
+      "throwaway",
+      "network"
+    ]
+  },
+  {
+    "id": "top-pods",
+    "category": "Debugging & Troubleshooting",
+    "command": "kubectl top pods",
+    "description": "Show live CPU and memory usage per pod.",
+    "example": "kubectl top pods -A --sort-by=memory",
+    "notes": "Requires metrics-server; without it you get 'error: Metrics API not available'. These are current point-in-time readings from the kubelet, not historical data and not the same as what your monitoring stack shows. --sort-by accepts cpu or memory.",
+    "danger": false,
+    "tags": [
+      "metrics",
+      "resources",
+      "debug",
+      "top"
+    ]
+  },
+  {
+    "id": "top-nodes",
+    "category": "Debugging & Troubleshooting",
+    "command": "kubectl top nodes",
+    "description": "Show CPU and memory usage per node, with percentages of allocatable capacity.",
+    "example": "kubectl top nodes --sort-by=cpu",
+    "notes": "This is actual usage. It is not the same as what the scheduler sees, which is the sum of pod *requests* - a node can show 20% CPU usage here and still refuse to schedule anything because requests are fully committed. Compare against `kubectl describe node` for the requests view.",
+    "danger": false,
+    "tags": [
+      "metrics",
+      "nodes",
+      "capacity",
+      "top"
+    ]
+  },
+  {
+    "id": "wait-condition",
+    "category": "Debugging & Troubleshooting",
+    "command": "kubectl wait --for=condition=<condition> <resource>/<name> --timeout=<duration>",
+    "description": "Block until an object reports a given condition, then exit - the correct way to sequence steps in a script.",
+    "example": "kubectl wait --for=condition=Ready pod/payments-api-7d9f8-x2klm --timeout=120s",
+    "notes": "Far better than `sleep 30` in CI. Common conditions are Ready on pods, Available on deployments, and Complete on jobs. If the object does not exist yet, wait errors immediately rather than waiting for it to appear - create first, then wait. Exits non-zero on timeout.",
+    "danger": false,
+    "tags": [
+      "wait",
+      "ci",
+      "scripting",
+      "sync"
+    ]
+  },
+  {
+    "id": "wait-condition-selector",
+    "category": "Debugging & Troubleshooting",
+    "command": "kubectl wait --for=condition=Ready pods -l <selector> --timeout=<duration>",
+    "description": "Wait for every pod matching a label selector to become Ready.",
+    "example": "kubectl wait --for=condition=Ready pods -l app=payments-api --timeout=5m",
+    "notes": "Matches only pods that exist when the command starts, so it will not wait for replicas that have not been created yet - for a deploy, `kubectl rollout status` is the more reliable gate. --all is the equivalent for every object of the type in the namespace.",
+    "danger": false,
+    "tags": [
+      "wait",
+      "selector",
+      "ci",
+      "sync"
+    ]
+  },
+  {
+    "id": "wait-delete",
+    "category": "Debugging & Troubleshooting",
+    "command": "kubectl wait --for=delete <resource>/<name> --timeout=<duration>",
+    "description": "Block until an object has actually disappeared from the API.",
+    "example": "kubectl wait --for=delete pod/payments-api-7d9f8-x2klm --timeout=60s",
+    "notes": "Useful after a delete, because `kubectl delete` returns as soon as deletion is *requested*, not when it finishes - terminationGracePeriodSeconds and finalizers can keep an object alive for minutes afterwards.",
+    "danger": false,
+    "tags": [
+      "wait",
+      "delete",
+      "scripting"
+    ]
+  },
+  {
+    "id": "get-restart-counts",
+    "category": "Debugging & Troubleshooting",
+    "command": "kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{\"\\t\"}{.status.containerStatuses[*].restartCount}{\"\\n\"}{end}'",
+    "description": "Print every pod's name alongside the restart count of each of its containers.",
+    "example": "kubectl get pods -A -o jsonpath='{range .items[*]}{.metadata.namespace}{\"/\"}{.metadata.name}{\"\\t\"}{.status.containerStatuses[*].restartCount}{\"\\n\"}{end}'",
+    "notes": "Unlike --sort-by, this covers every container rather than just the first, so sidecar restarts show up too. A high count that stopped growing is old news; check the container's lastState timestamp to see whether it is still happening.",
+    "danger": false,
+    "tags": [
+      "debug",
+      "jsonpath",
+      "restarts",
+      "crashloop"
+    ]
+  },
+  {
+    "id": "debug-pending-pod",
+    "category": "Debugging & Troubleshooting",
+    "command": "kubectl describe pod <pod> | grep -A 10 Events",
+    "description": "Jump straight to the events on a Pending pod, where the scheduler explains why it will not place it.",
+    "example": "kubectl describe pod payments-api-7d9f8-x2klm | grep -A 10 Events",
+    "notes": "FailedScheduling messages name the exact reason per node: 'Insufficient cpu', 'node(s) had untolerated taint', 'didn't match Pod's node affinity', 'had volume node affinity conflict'. Those strings tell you whether to fix requests, tolerations, affinity or storage zone placement.",
+    "danger": false,
+    "tags": [
+      "debug",
+      "scheduling",
+      "pending",
+      "events"
+    ]
+  },
+  {
+    "id": "api-resources-cached",
+    "category": "Debugging & Troubleshooting",
+    "command": "kubectl api-resources --cached=false",
+    "description": "Force a fresh discovery request instead of reading kubectl's local cache of the cluster's API surface.",
+    "example": "kubectl api-resources --cached=false | grep certificates",
+    "notes": "kubectl caches discovery data under ~/.kube/cache for ten minutes. If you just installed a CRD and kubectl still says 'the server doesn't have a resource type', this is why - either use --cached=false or delete ~/.kube/cache/discovery.",
+    "danger": false,
+    "tags": [
+      "debug",
+      "crd",
+      "cache",
+      "discovery"
+    ]
+  },
+  {
+    "id": "logs-pod",
+    "category": "Logs & Events",
+    "command": "kubectl logs <pod>",
+    "description": "Print the stdout and stderr of a pod's container.",
+    "example": "kubectl logs payments-api-7d9f8-x2klm",
+    "notes": "Only shows what the container wrote to stdout/stderr - an app logging to a file inside the container is invisible here. Logs are stored on the node and rotated by the kubelet, so they are lost when the pod is deleted or the node is replaced.",
+    "danger": false,
+    "tags": [
+      "logs",
+      "debug",
+      "basics"
+    ]
+  },
+  {
+    "id": "logs-follow",
+    "category": "Logs & Events",
+    "command": "kubectl logs -f <pod>",
+    "description": "Stream a container's logs live until you interrupt.",
+    "example": "kubectl logs -f payments-api-7d9f8-x2klm",
+    "notes": "The stream ends when the container restarts, so a crash-looping pod will keep dropping you out. Combine with --tail to avoid replaying hours of history first: `kubectl logs -f --tail=20 <pod>`.",
+    "danger": false,
+    "tags": [
+      "logs",
+      "follow",
+      "live",
+      "debug"
+    ]
+  },
+  {
+    "id": "logs-previous",
+    "category": "Logs & Events",
+    "command": "kubectl logs <pod> --previous",
+    "description": "Show the logs of the container's previous, terminated instance.",
+    "example": "kubectl logs payments-api-7d9f8-x2klm --previous",
+    "notes": "The single most important flag for debugging CrashLoopBackOff: the current container has just started and has nothing useful in it, while the one that died holds the stack trace. -p is the short form. Only the immediately previous instance is kept - two restarts later, it is gone.",
+    "danger": false,
+    "tags": [
+      "logs",
+      "crashloop",
+      "debug",
+      "essential"
+    ]
+  },
+  {
+    "id": "logs-container",
+    "category": "Logs & Events",
+    "command": "kubectl logs <pod> -c <container>",
+    "description": "Select which container's logs to read in a multi-container pod.",
+    "example": "kubectl logs payments-api-7d9f8-x2klm -c istio-proxy",
+    "notes": "Without -c, a multi-container pod errors and helpfully lists the container names. Init container logs are reachable the same way - naming the init container is the only way to see why an Init:Error pod failed.",
+    "danger": false,
+    "tags": [
+      "logs",
+      "containers",
+      "sidecar",
+      "init"
+    ]
+  },
+  {
+    "id": "logs-all-containers",
+    "category": "Logs & Events",
+    "command": "kubectl logs <pod> --all-containers=true",
+    "description": "Print logs from every container in the pod, including init containers.",
+    "example": "kubectl logs payments-api-7d9f8-x2klm --all-containers=true --prefix",
+    "notes": "Add --prefix so each line is tagged with the pod and container it came from, otherwise interleaved output is unreadable. Ordering across containers is not guaranteed to be chronological.",
+    "danger": false,
+    "tags": [
+      "logs",
+      "containers",
+      "multi"
+    ]
+  },
+  {
+    "id": "logs-tail",
+    "category": "Logs & Events",
+    "command": "kubectl logs <pod> --tail=<lines>",
+    "description": "Show only the last N lines instead of the entire log.",
+    "example": "kubectl logs payments-api-7d9f8-x2klm --tail=100",
+    "notes": "The default is all available lines when you name a pod, but only 10 lines when you use a label selector. On a chatty service, fetching everything is slow and can hit --limit-bytes truncation, so get in the habit of tailing.",
+    "danger": false,
+    "tags": [
+      "logs",
+      "tail",
+      "performance"
+    ]
+  },
+  {
+    "id": "logs-since",
+    "category": "Logs & Events",
+    "command": "kubectl logs <pod> --since=<duration>",
+    "description": "Show only log entries newer than a relative duration.",
+    "example": "kubectl logs payments-api-7d9f8-x2klm --since=15m",
+    "notes": "Takes Go durations: 10s, 5m, 2h. Use --since-time with an RFC3339 timestamp when you need an absolute window matched to an incident; the two flags are mutually exclusive.",
+    "danger": false,
+    "tags": [
+      "logs",
+      "time",
+      "incident"
+    ]
+  },
+  {
+    "id": "logs-timestamps",
+    "category": "Logs & Events",
+    "command": "kubectl logs <pod> --timestamps",
+    "description": "Prefix each line with the RFC3339 timestamp the kubelet recorded.",
+    "example": "kubectl logs payments-api-7d9f8-x2klm --timestamps --tail=50",
+    "notes": "Indispensable when your app logs without timestamps, or when correlating across pods whose clocks or log formats differ. These are the node's timestamps for when the line was written, not the app's own notion of time.",
+    "danger": false,
+    "tags": [
+      "logs",
+      "timestamps",
+      "correlation"
+    ]
+  },
+  {
+    "id": "logs-selector",
+    "category": "Logs & Events",
+    "command": "kubectl logs -l <label-selector>",
+    "description": "Aggregate logs from every pod matching a label selector.",
+    "example": "kubectl logs -l app=payments-api --tail=50 --prefix --since=10m",
+    "notes": "Defaults to only 10 lines per pod and to at most 5 concurrent pods - raise the latter with --max-log-requests. Use --prefix to tell the pods apart. For serious multi-pod tailing, a purpose-built tool like stern handles reconnects and colouring far better.",
+    "danger": false,
+    "tags": [
+      "logs",
+      "selector",
+      "multi-pod",
+      "aggregate"
+    ]
+  },
+  {
+    "id": "logs-deployment",
+    "category": "Logs & Events",
+    "command": "kubectl logs deployment/<name>",
+    "description": "Read logs from a workload without having to look up a pod name first.",
+    "example": "kubectl logs deployment/payments-api --tail=100 -f",
+    "notes": "Important caveat: this picks ONE pod from the workload, not all of them - so on a 10-replica Deployment you are seeing a tenth of the traffic and may miss the errors entirely. Use -l with the workload's labels when you need every replica. Works with job/, statefulset/, daemonset/ too.",
+    "danger": false,
+    "tags": [
+      "logs",
+      "deployment",
+      "shortcut",
+      "gotcha"
+    ]
+  },
+  {
+    "id": "logs-job",
+    "category": "Logs & Events",
+    "command": "kubectl logs job/<name>",
+    "description": "Read the logs of a Job's pod, including one that has already completed.",
+    "example": "kubectl logs job/db-migrate",
+    "notes": "The output survives as long as the Job's pod object does, which is why deleting completed Jobs too eagerly destroys your only record of a migration. Set ttlSecondsAfterFinished generously rather than cleaning up by hand.",
+    "danger": false,
+    "tags": [
+      "logs",
+      "jobs",
+      "batch"
+    ]
+  },
+  {
+    "id": "events-command",
+    "category": "Logs & Events",
+    "command": "kubectl events",
+    "description": "List events in the current namespace, sorted by time by default.",
+    "example": "kubectl events -A --types=Warning",
+    "notes": "A dedicated command since 1.26 (GA in 1.27) and much better than `get events` because it sorts sensibly out of the box and understands --for. Remember events are ephemeral: the API server discards them after about an hour, so an event you did not catch is gone.",
+    "danger": false,
+    "tags": [
+      "events",
+      "debug",
+      "triage"
+    ]
+  },
+  {
+    "id": "events-for-object",
+    "category": "Logs & Events",
+    "command": "kubectl events --for <resource>/<name>",
+    "description": "Show only the events attached to one specific object.",
+    "example": "kubectl events --for pod/payments-api-7d9f8-x2klm",
+    "notes": "Cleaner than describe when you only want the event history, and it works for any object type - a Deployment's events explain rollout decisions, a PVC's explain provisioning failures. Add --watch to follow new events live.",
+    "danger": false,
+    "tags": [
+      "events",
+      "debug",
+      "object"
+    ]
+  },
+  {
+    "id": "events-watch",
+    "category": "Logs & Events",
+    "command": "kubectl events --watch",
+    "description": "Stream cluster events as they happen.",
+    "example": "kubectl events -A --watch --types=Warning",
+    "notes": "Leave this running in a second terminal while you deploy - scheduling failures, image pull errors and probe failures appear here in real time, usually before anything shows in `get pods`.",
+    "danger": false,
+    "tags": [
+      "events",
+      "watch",
+      "live",
+      "deploy"
+    ]
+  },
+  {
+    "id": "get-events-sorted",
+    "category": "Logs & Events",
+    "command": "kubectl get events --sort-by=.lastTimestamp",
+    "description": "List events in chronological order using the classic get-based command.",
+    "example": "kubectl get events --sort-by=.lastTimestamp -A",
+    "notes": "`get events` is unsorted by default, which makes the raw output nearly useless - this incantation is why so many people have it aliased. Note some events populate .eventTime rather than .lastTimestamp and will sort oddly; `kubectl events` handles that for you.",
+    "danger": false,
+    "tags": [
+      "events",
+      "sort",
+      "classic"
+    ]
+  },
+  {
+    "id": "get-events-warnings",
+    "category": "Logs & Events",
+    "command": "kubectl get events --field-selector type=Warning",
+    "description": "Filter events down to warnings, hiding the Normal noise.",
+    "example": "kubectl get events -A --field-selector type=Warning --sort-by=.lastTimestamp",
+    "notes": "Event types are only Normal and Warning. This is a good cluster-wide health sweep: repeated FailedScheduling, BackOff, Unhealthy or FailedMount warnings point straight at the broken thing.",
+    "danger": false,
+    "tags": [
+      "events",
+      "warnings",
+      "health",
+      "filter"
+    ]
+  },
+  {
+    "id": "exec-interactive",
+    "category": "Exec & Port Forwarding",
+    "command": "kubectl exec -it <pod> -- <command>",
+    "description": "Run a command inside a running container with an interactive terminal attached.",
+    "example": "kubectl exec -it payments-api-7d9f8-x2klm -- /bin/sh",
+    "notes": "The bare -- separates kubectl's flags from the command; omit it and kubectl tries to parse your command's flags as its own. Use /bin/sh rather than /bin/bash for alpine and distroless-adjacent images, and expect nothing at all to work on true distroless images - use `kubectl debug` there instead.",
+    "danger": false,
+    "tags": [
+      "exec",
+      "shell",
+      "debug",
+      "basics"
+    ]
+  },
+  {
+    "id": "exec-single-command",
+    "category": "Exec & Port Forwarding",
+    "command": "kubectl exec <pod> -- <command>",
+    "description": "Run a one-off non-interactive command in a container and print its output.",
+    "example": "kubectl exec payments-api-7d9f8-x2klm -- env",
+    "notes": "Without -it there is no TTY, which is exactly right for scripts and for commands whose output you want to pipe. Note the command runs directly, not through a shell, so `kubectl exec pod -- echo $HOME` expands $HOME in *your* shell - wrap it in `sh -c '...'` when you need shell features.",
+    "danger": false,
+    "tags": [
+      "exec",
+      "scripting",
+      "debug"
+    ]
+  },
+  {
+    "id": "exec-container",
+    "category": "Exec & Port Forwarding",
+    "command": "kubectl exec -it <pod> -c <container> -- <command>",
+    "description": "Exec into a specific container in a multi-container pod.",
+    "example": "kubectl exec -it payments-api-7d9f8-x2klm -c istio-proxy -- /bin/bash",
+    "notes": "Without -c you land in the first container listed in the spec, which with a service mesh may not be your app. You cannot exec into an init container - by the time the pod is running, it has already exited.",
+    "danger": false,
+    "tags": [
+      "exec",
+      "containers",
+      "sidecar"
+    ]
+  },
+  {
+    "id": "exec-stdin-file",
+    "category": "Exec & Port Forwarding",
+    "command": "kubectl exec -i <pod> -- <command> < <local-file>",
+    "description": "Pipe a local file into a command running inside a container.",
+    "example": "kubectl exec -i postgres-0 -- psql -U app -d payments < schema.sql",
+    "notes": "-i without -t is the right combination for piping: adding -t allocates a TTY that mangles binary data and inserts carriage returns. This is the standard trick for restoring a database dump into a pod without copying the file in first.",
+    "danger": true,
+    "tags": [
+      "exec",
+      "stdin",
+      "database",
+      "pipe"
+    ]
+  },
+  {
+    "id": "attach",
+    "category": "Exec & Port Forwarding",
+    "command": "kubectl attach -it <pod>",
+    "description": "Attach your terminal to the main process of a running container rather than starting a new one.",
+    "example": "kubectl attach -it payments-api-7d9f8-x2klm -c payments-api",
+    "notes": "Different from exec: you see the existing process's output and share its stdin, so anything you type goes to PID 1. Detach with Ctrl-P Ctrl-Q; pressing Ctrl-C can kill the container's main process and take the pod down with it.",
+    "danger": true,
+    "tags": [
+      "attach",
+      "exec",
+      "terminal",
+      "risky"
+    ]
+  },
+  {
+    "id": "cp-to-pod",
+    "category": "Exec & Port Forwarding",
+    "command": "kubectl cp <local-path> <namespace>/<pod>:<remote-path>",
+    "description": "Copy a local file or directory into a running container.",
+    "example": "kubectl cp ./config.yaml payments/payments-api-7d9f8-x2klm:/tmp/config.yaml",
+    "notes": "Requires the tar binary inside the container - it fails on distroless and minimal images. Use -c to pick a container. Files copied in are lost on restart, so this is for debugging, never for configuration.",
+    "danger": false,
+    "tags": [
+      "cp",
+      "files",
+      "debug"
+    ]
+  },
+  {
+    "id": "cp-from-pod",
+    "category": "Exec & Port Forwarding",
+    "command": "kubectl cp <namespace>/<pod>:<remote-path> <local-path>",
+    "description": "Copy a file or directory out of a container onto your machine.",
+    "example": "kubectl cp payments/payments-api-7d9f8-x2klm:/var/log/app.log ./app.log",
+    "notes": "Remote paths are interpreted as relative to the container's working directory unless they start with /; kubectl strips a leading / and warns about it, which surprises people. Add --retries=-1 for large files over a flaky connection.",
+    "danger": false,
+    "tags": [
+      "cp",
+      "files",
+      "debug",
+      "extract"
+    ]
+  },
+  {
+    "id": "port-forward-pod",
+    "category": "Exec & Port Forwarding",
+    "command": "kubectl port-forward pod/<pod> <local-port>:<pod-port>",
+    "description": "Tunnel a local port to a port on a pod through the API server.",
+    "example": "kubectl port-forward pod/payments-api-7d9f8-x2klm 8080:8080",
+    "notes": "Binds to 127.0.0.1 only by default, so it is safe on a shared machine. The tunnel goes through the API server, so it is slow, single-connection-per-request and drops when the pod restarts - fine for debugging, never for load testing.",
+    "danger": false,
+    "tags": [
+      "port-forward",
+      "networking",
+      "debug",
+      "local"
+    ]
+  },
+  {
+    "id": "port-forward-service",
+    "category": "Exec & Port Forwarding",
+    "command": "kubectl port-forward service/<service> <local-port>:<service-port>",
+    "description": "Forward a local port to a Service, letting Kubernetes pick a backing pod.",
+    "example": "kubectl port-forward service/payments-api 8080:80",
+    "notes": "It resolves the Service to a single pod and forwards to that - it does NOT load balance across replicas, so this cannot be used to test balancing behaviour. If the Service has no ready endpoints the command fails immediately, which is itself a useful diagnostic.",
+    "danger": false,
+    "tags": [
+      "port-forward",
+      "service",
+      "networking",
+      "debug"
+    ]
+  },
+  {
+    "id": "port-forward-random-port",
+    "category": "Exec & Port Forwarding",
+    "command": "kubectl port-forward <resource>/<name> :<remote-port>",
+    "description": "Let the OS choose a free local port and print which one it picked.",
+    "example": "kubectl port-forward service/payments-api :80",
+    "notes": "Avoids 'address already in use' when you are forwarding several services at once, or in scripts that run in parallel. kubectl prints the chosen port on its first line of output.",
+    "danger": false,
+    "tags": [
+      "port-forward",
+      "scripting",
+      "networking"
+    ]
+  },
+  {
+    "id": "port-forward-address",
+    "category": "Exec & Port Forwarding",
+    "command": "kubectl port-forward --address <address> <resource>/<name> <local-port>:<remote-port>",
+    "description": "Bind the forwarded port to an address other than localhost.",
+    "example": "kubectl port-forward --address 0.0.0.0 service/payments-api 8080:80",
+    "notes": "0.0.0.0 exposes an internal cluster service to your entire network with no authentication in front of it. Occasionally necessary (forwarding from inside a container or a VM), but never leave it running - it is an unauthenticated hole into the cluster.",
+    "danger": true,
+    "tags": [
+      "port-forward",
+      "security",
+      "networking",
+      "risky"
+    ]
+  },
+  {
+    "id": "proxy",
+    "category": "Exec & Port Forwarding",
+    "command": "kubectl proxy --port=<port>",
+    "description": "Run a local HTTP proxy that authenticates to the API server for you.",
+    "example": "kubectl proxy --port=8001",
+    "notes": "Once running, `curl http://localhost:8001/api/v1/namespaces/default/pods` works with no token handling - kubectl injects your credentials. It listens on localhost only and filters non-local requests by default, which is a deliberate safeguard because anyone reaching it has your full cluster permissions.",
+    "danger": true,
+    "tags": [
+      "proxy",
+      "api",
+      "debug",
+      "curl"
+    ]
+  },
+  {
+    "id": "proxy-service-url",
+    "category": "Exec & Port Forwarding",
+    "command": "curl http://localhost:<port>/api/v1/namespaces/<ns>/services/<service>:<port-name>/proxy/<path>",
+    "description": "Reach a cluster Service's HTTP endpoint through kubectl proxy without a port-forward.",
+    "example": "curl http://localhost:8001/api/v1/namespaces/payments/services/payments-api:http/proxy/healthz",
+    "notes": "The service proxy path takes either a port name or a number after the colon. Handy for poking at dashboards and health endpoints of services that have no Ingress. Add `http:` or `https:` before the service name to force the scheme.",
+    "danger": false,
+    "tags": [
+      "proxy",
+      "service",
+      "curl",
+      "api"
+    ]
+  },
+  {
+    "id": "create-configmap-literal",
+    "category": "Config, Secrets & Env",
+    "command": "kubectl create configmap <name> --from-literal=<key>=<value>",
+    "description": "Create a ConfigMap from key/value pairs given on the command line.",
+    "example": "kubectl create configmap payments-config --from-literal=LOG_LEVEL=info --from-literal=REGION=eu-west-1",
+    "notes": "Repeat --from-literal for each key. Values containing spaces or shell metacharacters must be quoted. ConfigMaps are capped at roughly 1MiB because they live in etcd - large files belong in a volume or an object store, not here.",
+    "danger": false,
+    "tags": [
+      "configmap",
+      "create",
+      "config"
+    ]
+  },
+  {
+    "id": "create-configmap-file",
+    "category": "Config, Secrets & Env",
+    "command": "kubectl create configmap <name> --from-file=<path>",
+    "description": "Create a ConfigMap whose keys are filenames and whose values are file contents.",
+    "example": "kubectl create configmap nginx-config --from-file=./nginx.conf",
+    "notes": "Pointing --from-file at a directory adds every file in it as a separate key, non-recursively. The key defaults to the base filename, and filenames that are not valid ConfigMap keys (dots and dashes are fine, slashes are not) will be rejected.",
+    "danger": false,
+    "tags": [
+      "configmap",
+      "create",
+      "files"
+    ]
+  },
+  {
+    "id": "create-configmap-env-file",
+    "category": "Config, Secrets & Env",
+    "command": "kubectl create configmap <name> --from-env-file=<path>",
+    "description": "Create a ConfigMap by parsing a dotenv-style file into individual keys.",
+    "example": "kubectl create configmap payments-config --from-env-file=./app.env",
+    "notes": "Different from --from-file: each KEY=VALUE line becomes its own ConfigMap key, rather than the whole file becoming one key. Blank lines and # comments are skipped, and there is no quote processing or variable interpolation - a value of \"foo\" keeps its quotes.",
+    "danger": false,
+    "tags": [
+      "configmap",
+      "env",
+      "create"
+    ]
+  },
+  {
+    "id": "configmap-regenerate",
+    "category": "Config, Secrets & Env",
+    "command": "kubectl create configmap <name> --from-file=<path> --dry-run=client -o yaml | kubectl apply -f -",
+    "description": "Update an existing ConfigMap from files idempotently, since create alone would fail on an existing object.",
+    "example": "kubectl create configmap nginx-config --from-file=./nginx.conf --dry-run=client -o yaml | kubectl apply -f -",
+    "notes": "The standard idiom for 'regenerate this ConfigMap from disk'. Remember that pods do not restart automatically: mounted volumes update within a minute or two, but environment variables never do - follow with `kubectl rollout restart`.",
+    "danger": false,
+    "tags": [
+      "configmap",
+      "update",
+      "idiom",
+      "apply"
+    ]
+  },
+  {
+    "id": "create-secret-literal",
+    "category": "Config, Secrets & Env",
+    "command": "kubectl create secret generic <name> --from-literal=<key>=<value>",
+    "description": "Create an opaque Secret from key/value pairs.",
+    "example": "kubectl create secret generic db-credentials --from-literal=username=app --from-literal=password='s3cr3t!'",
+    "notes": "The value lands in your shell history in plain text - prefer --from-file, or prefix the command with a space if your shell is configured to skip those. kubectl base64-encodes the value for you; do not pre-encode it or you will double-encode.",
+    "danger": false,
+    "tags": [
+      "secrets",
+      "create",
+      "security"
+    ]
+  },
+  {
+    "id": "create-secret-file",
+    "category": "Config, Secrets & Env",
+    "command": "kubectl create secret generic <name> --from-file=<path>",
+    "description": "Create a Secret whose value is the contents of a file, keeping it out of your shell history.",
+    "example": "kubectl create secret generic tls-ca --from-file=ca.crt=./ca.crt",
+    "notes": "The safer way to create secrets by hand, and the only sane option for binary material like keys and certificates. Files are read byte-for-byte, so a trailing newline your editor added becomes part of the secret - a classic cause of 'invalid token' errors.",
+    "danger": false,
+    "tags": [
+      "secrets",
+      "create",
+      "files",
+      "security"
+    ]
+  },
+  {
+    "id": "create-secret-env-file",
+    "category": "Config, Secrets & Env",
+    "command": "kubectl create secret generic <name> --from-env-file=<path>",
+    "description": "Create a Secret with one key per line of a dotenv file.",
+    "example": "kubectl create secret generic payments-secrets --from-env-file=./secrets.env",
+    "notes": "Same parsing rules as the ConfigMap version. Make sure the .env file is gitignored - this pattern makes it very easy to commit real credentials by accident.",
+    "danger": false,
+    "tags": [
+      "secrets",
+      "env",
+      "create"
+    ]
+  },
+  {
+    "id": "create-secret-docker-registry",
+    "category": "Config, Secrets & Env",
+    "command": "kubectl create secret docker-registry <name> --docker-server=<server> --docker-username=<user> --docker-password=<password>",
+    "description": "Create an image pull secret for a private container registry.",
+    "example": "kubectl create secret docker-registry ghcr-pull --docker-server=ghcr.io --docker-username=acme-ci --docker-password=$GITHUB_TOKEN",
+    "notes": "Creating it is only half the job - reference it in the pod spec's imagePullSecrets or attach it to the ServiceAccount with `kubectl patch sa default -p '{\"imagePullSecrets\":[{\"name\":\"ghcr-pull\"}]}'`. Pull secrets are namespaced, so each namespace needs its own copy.",
+    "danger": false,
+    "tags": [
+      "secrets",
+      "registry",
+      "imagepull",
+      "create"
+    ]
+  },
+  {
+    "id": "create-secret-tls",
+    "category": "Config, Secrets & Env",
+    "command": "kubectl create secret tls <name> --cert=<cert-path> --key=<key-path>",
+    "description": "Create a kubernetes.io/tls Secret from a certificate and private key pair.",
+    "example": "kubectl create secret tls api-example-com-tls --cert=./fullchain.pem --key=./privkey.pem",
+    "notes": "This is the shape Ingress controllers expect: keys are exactly tls.crt and tls.key. Use the full chain, not just the leaf certificate, or clients will fail validation. cert-manager creates these automatically, which is nearly always preferable to managing them by hand.",
+    "danger": false,
+    "tags": [
+      "secrets",
+      "tls",
+      "ingress",
+      "create"
+    ]
+  },
+  {
+    "id": "decode-secret-jsonpath",
+    "category": "Config, Secrets & Env",
+    "command": "kubectl get secret <name> -o jsonpath='{.data.<key>}' | base64 -d",
+    "description": "Read one value out of a Secret and decode it.",
+    "example": "kubectl get secret db-credentials -o jsonpath='{.data.password}' | base64 -d",
+    "notes": "Use base64 --decode on macOS if -d is not recognised. If the key contains a dot you must escape it: {.data.tls\\.crt}. The decoded value has no trailing newline, so add `; echo` to keep your prompt tidy.",
+    "danger": false,
+    "tags": [
+      "secrets",
+      "decode",
+      "jsonpath",
+      "read"
+    ]
+  },
+  {
+    "id": "decode-secret-all",
+    "category": "Config, Secrets & Env",
+    "command": "kubectl get secret <name> -o go-template='{{range $k,$v := .data}}{{$k}}={{$v | base64decode}}{{\"\\n\"}}{{end}}'",
+    "description": "Decode and print every key/value pair in a Secret at once.",
+    "example": "kubectl get secret db-credentials -o go-template='{{range $k,$v := .data}}{{$k}}={{$v | base64decode}}{{\"\\n\"}}{{end}}'",
+    "notes": "base64decode is a template function kubectl provides that JSONPath has no equivalent for - this is the main reason to reach for go-template. Obviously this prints live credentials to your terminal; think about who is watching and where the scrollback goes.",
+    "danger": false,
+    "tags": [
+      "secrets",
+      "decode",
+      "go-template",
+      "read"
+    ]
+  },
+  {
+    "id": "secret-base64-warning",
+    "category": "Config, Secrets & Env",
+    "command": "kubectl get secret <name> -o yaml",
+    "description": "View a Secret's stored form, with values base64-encoded.",
+    "example": "kubectl get secret db-credentials -o yaml",
+    "notes": "base64 is encoding, not encryption - anyone who can read the Secret can read the credential, and by default etcd stores it unencrypted unless the cluster has encryption-at-rest configured. Read access to Secrets in a namespace is effectively equal to holding every credential in it, so treat RBAC on secrets seriously.",
+    "danger": false,
+    "tags": [
+      "secrets",
+      "security",
+      "inspect",
+      "misconception"
+    ]
+  },
+  {
+    "id": "describe-secret",
+    "category": "Config, Secrets & Env",
+    "command": "kubectl describe secret <name>",
+    "description": "Show a Secret's type and the size of each key without revealing the values.",
+    "example": "kubectl describe secret db-credentials",
+    "notes": "The safe command to run when someone is watching your screen: it lists the key names and byte counts only. Good for confirming a Secret has the keys an app expects before debugging further.",
+    "danger": false,
+    "tags": [
+      "secrets",
+      "inspect",
+      "safe"
+    ]
+  },
+  {
+    "id": "edit-secret",
+    "category": "Config, Secrets & Env",
+    "command": "kubectl edit secret <name>",
+    "description": "Edit a Secret in place; values in the editor are base64-encoded.",
+    "example": "kubectl edit secret db-credentials",
+    "notes": "You must supply base64 for anything under data. Alternatively add a stringData block with plaintext values - the API server encodes it and merges it over data on save. Pods holding the old value as an env var will not see the change until they restart.",
+    "danger": true,
+    "tags": [
+      "secrets",
+      "edit",
+      "live-change"
+    ]
+  },
+  {
+    "id": "configmap-immutable",
+    "category": "Config, Secrets & Env",
+    "command": "kubectl patch configmap <name> --type=merge -p '{\"immutable\":true}'",
+    "description": "Mark a ConfigMap or Secret immutable so it can never be modified again.",
+    "example": "kubectl patch configmap payments-config-v3 --type=merge -p '{\"immutable\":true}'",
+    "notes": "Immutability protects against accidental edits and lets the kubelet stop watching the object, which measurably reduces API server load on large clusters. It is one-way: to change the contents you must delete and recreate, so pair it with versioned names.",
+    "danger": false,
+    "tags": [
+      "configmap",
+      "secrets",
+      "immutable",
+      "performance"
+    ]
+  },
+  {
+    "id": "auth-can-i",
+    "category": "RBAC & Security",
+    "command": "kubectl auth can-i <verb> <resource>",
+    "description": "Ask the API server whether you are allowed to perform an action, answering yes or no.",
+    "example": "kubectl auth can-i create deployments -n payments",
+    "notes": "Asks the real authorizer, so it accounts for every Role, ClusterRole and any webhook authorizer - much more reliable than reading RBAC YAML yourself. Exits non-zero on 'no', which makes it a usable guard in scripts. Add --quiet to suppress the output and just use the exit code.",
+    "danger": false,
+    "tags": [
+      "rbac",
+      "auth",
+      "permissions",
+      "check"
+    ]
+  },
+  {
+    "id": "auth-can-i-list",
+    "category": "RBAC & Security",
+    "command": "kubectl auth can-i --list",
+    "description": "Print every resource and verb combination you are permitted to use in a namespace.",
+    "example": "kubectl auth can-i --list -n payments",
+    "notes": "The single most useful RBAC debugging command - it answers 'what can I actually do here' rather than making you guess at verbs. Add --namespace to scope it; without one it uses your current namespace, not the whole cluster.",
+    "danger": false,
+    "tags": [
+      "rbac",
+      "auth",
+      "permissions",
+      "audit"
+    ]
+  },
+  {
+    "id": "auth-can-i-impersonate",
+    "category": "RBAC & Security",
+    "command": "kubectl auth can-i <verb> <resource> --as=<user>",
+    "description": "Check another user's or ServiceAccount's permissions by impersonating them.",
+    "example": "kubectl auth can-i get secrets --as=system:serviceaccount:payments:payments-api -n payments",
+    "notes": "ServiceAccounts are named system:serviceaccount:<namespace>:<name>. This is how you verify an application's RBAC without deploying it or extracting its token. You need the 'impersonate' permission yourself, which cluster-admin has; --as-group adds group memberships to the simulated identity.",
+    "danger": false,
+    "tags": [
+      "rbac",
+      "impersonation",
+      "serviceaccount",
+      "audit"
+    ]
+  },
+  {
+    "id": "auth-can-i-everything",
+    "category": "RBAC & Security",
+    "command": "kubectl auth can-i '*' '*' --all-namespaces",
+    "description": "Check whether an identity effectively holds cluster-admin.",
+    "example": "kubectl auth can-i '*' '*' --all-namespaces --as=system:serviceaccount:default:default",
+    "notes": "Quote the asterisks so your shell does not glob them. A 'yes' for a workload's ServiceAccount is a finding, not a convenience - anything that can create pods cluster-wide can already escalate to the node.",
+    "danger": false,
+    "tags": [
+      "rbac",
+      "audit",
+      "security",
+      "cluster-admin"
+    ]
+  },
+  {
+    "id": "auth-whoami",
+    "category": "RBAC & Security",
+    "command": "kubectl auth whoami",
+    "description": "Print the username, UID and groups the API server sees for your current credentials.",
+    "example": "kubectl auth whoami -o yaml",
+    "notes": "Added in 1.27 (beta in 1.28). Invaluable with cloud IAM integrations and OIDC, where the mapping from your cloud identity to a Kubernetes username is opaque - this shows exactly which subject your RoleBindings need to name.",
+    "danger": false,
+    "tags": [
+      "auth",
+      "identity",
+      "rbac",
+      "debug"
+    ]
+  },
+  {
+    "id": "auth-reconcile",
+    "category": "RBAC & Security",
+    "command": "kubectl auth reconcile -f <rbac-file>",
+    "description": "Apply RBAC objects with correct merge semantics for roles and bindings.",
+    "example": "kubectl auth reconcile -f rbac.yaml",
+    "notes": "Purpose-built for RBAC: it unions rules and subjects rather than overwriting, and it recreates bindings when an immutable roleRef changes - something a plain apply simply fails on. Add --remove-extra-permissions or --remove-extra-subjects when you want the file to be authoritative rather than additive.",
+    "danger": false,
+    "tags": [
+      "rbac",
+      "apply",
+      "roles",
+      "bindings"
+    ]
+  },
+  {
+    "id": "create-serviceaccount",
+    "category": "RBAC & Security",
+    "command": "kubectl create serviceaccount <name>",
+    "description": "Create a ServiceAccount for a workload to authenticate as.",
+    "example": "kubectl create serviceaccount payments-api-sa -n payments",
+    "notes": "Since 1.24 this no longer auto-creates a long-lived token Secret - pods get short-lived projected tokens instead. If you need a static token for something outside the cluster, use `kubectl create token` or create a Secret of type kubernetes.io/service-account-token explicitly.",
+    "danger": false,
+    "tags": [
+      "serviceaccount",
+      "rbac",
+      "create",
+      "deprecation"
+    ]
+  },
+  {
+    "id": "create-token",
+    "category": "RBAC & Security",
+    "command": "kubectl create token <serviceaccount> --duration=<duration>",
+    "description": "Mint a short-lived bearer token for a ServiceAccount and print it.",
+    "example": "kubectl create token payments-api-sa --duration=1h -n payments",
+    "notes": "Added in 1.24 as the replacement for the old permanent token Secrets. The duration is capped by the API server's --service-account-max-token-expiration, so you may get back a shorter token than you asked for. The token is printed to stdout - do not log it.",
+    "danger": false,
+    "tags": [
+      "serviceaccount",
+      "token",
+      "auth",
+      "create"
+    ]
+  },
+  {
+    "id": "create-role",
+    "category": "RBAC & Security",
+    "command": "kubectl create role <name> --verb=<verbs> --resource=<resources>",
+    "description": "Create a namespaced Role granting specific verbs on specific resource types.",
+    "example": "kubectl create role pod-reader --verb=get,list,watch --resource=pods,pods/log -n payments",
+    "notes": "Subresources use a slash: pods/log, pods/exec, deployments/scale. Name resources as the plural API name, not the kind. Add --resource-name to restrict a rule to specific named objects, though note that restriction does not apply to list or watch.",
+    "danger": false,
+    "tags": [
+      "rbac",
+      "role",
+      "create",
+      "permissions"
+    ]
+  },
+  {
+    "id": "create-clusterrole",
+    "category": "RBAC & Security",
+    "command": "kubectl create clusterrole <name> --verb=<verbs> --resource=<resources>",
+    "description": "Create a cluster-scoped Role usable in any namespace or against cluster-scoped resources.",
+    "example": "kubectl create clusterrole node-reader --verb=get,list,watch --resource=nodes",
+    "notes": "Also supports --non-resource-url for endpoints outside the resource model, e.g. --non-resource-url=/metrics --verb=get, which is what monitoring agents need. A ClusterRole can be bound namespace-wide with a RoleBinding, which is the usual way to reuse the built-in view/edit roles.",
+    "danger": false,
+    "tags": [
+      "rbac",
+      "clusterrole",
+      "create",
+      "permissions"
+    ]
+  },
+  {
+    "id": "create-rolebinding",
+    "category": "RBAC & Security",
+    "command": "kubectl create rolebinding <name> --clusterrole=<role> --serviceaccount=<ns>:<sa>",
+    "description": "Grant a Role or ClusterRole to a subject within one namespace.",
+    "example": "kubectl create rolebinding payments-view --clusterrole=view --serviceaccount=payments:payments-api-sa -n payments",
+    "notes": "Use --role for a namespaced Role and --clusterrole to reuse a cluster-wide one, scoped to this namespace. Subject flags are --user, --group and --serviceaccount, and all can be repeated. roleRef is immutable, so retargeting a binding means deleting and recreating it.",
+    "danger": false,
+    "tags": [
+      "rbac",
+      "rolebinding",
+      "create",
+      "grant"
+    ]
+  },
+  {
+    "id": "create-clusterrolebinding",
+    "category": "RBAC & Security",
+    "command": "kubectl create clusterrolebinding <name> --clusterrole=<role> --user=<user>",
+    "description": "Grant a ClusterRole to a subject across the entire cluster.",
+    "example": "kubectl create clusterrolebinding jane-admin --clusterrole=cluster-admin --user=jane@example.com",
+    "notes": "Binding cluster-admin hands over total control of the cluster, including every Secret in every namespace, with no way to scope it down afterwards. Do it deliberately and rarely; a namespace-scoped RoleBinding to the 'admin' ClusterRole is almost always the right alternative.",
+    "danger": true,
+    "tags": [
+      "rbac",
+      "clusterrolebinding",
+      "cluster-admin",
+      "risky"
+    ]
+  },
+  {
+    "id": "describe-clusterrole",
+    "category": "RBAC & Security",
+    "command": "kubectl describe clusterrole <name>",
+    "description": "Read out the exact rules a ClusterRole grants, in a readable table.",
+    "example": "kubectl describe clusterrole view",
+    "notes": "Worth doing on the built-ins before you use them: 'view' deliberately excludes Secrets, 'edit' can modify workloads but not RBAC, and 'admin' can grant permissions within its namespace - which means admin in a namespace can escalate to anything that namespace's ServiceAccounts can do.",
+    "danger": false,
+    "tags": [
+      "rbac",
+      "clusterrole",
+      "inspect",
+      "learning"
+    ]
+  },
+  {
+    "id": "get-rolebindings-wide",
+    "category": "RBAC & Security",
+    "command": "kubectl get rolebindings,clusterrolebindings --all-namespaces -o wide",
+    "description": "List every binding in the cluster with its role and subjects visible.",
+    "example": "kubectl get rolebindings,clusterrolebindings -A -o wide",
+    "notes": "-o wide is what adds the ROLE, USERS, GROUPS and SERVICEACCOUNTS columns - without it the output is nearly useless. The fastest audit is to grep this for cluster-admin and see who turns up.",
+    "danger": false,
+    "tags": [
+      "rbac",
+      "audit",
+      "bindings",
+      "security"
+    ]
+  },
+  {
+    "id": "label-namespace-pod-security",
+    "category": "RBAC & Security",
+    "command": "kubectl label namespace <name> pod-security.kubernetes.io/enforce=<level>",
+    "description": "Apply a Pod Security Standard level to a namespace via the built-in admission controller.",
+    "example": "kubectl label namespace payments pod-security.kubernetes.io/enforce=restricted --overwrite",
+    "notes": "Levels are privileged, baseline and restricted. Use the warn and audit variants of the label first (pod-security.kubernetes.io/warn=restricted) to see what would break before enforcing - enforcement rejects non-compliant pods outright, and existing running pods are not re-evaluated, so breakage shows up at the next rollout.",
+    "danger": true,
+    "tags": [
+      "security",
+      "pod-security",
+      "namespace",
+      "admission"
+    ]
+  },
+  {
+    "id": "impersonate-command",
+    "category": "RBAC & Security",
+    "command": "kubectl <command> --as=<user> --as-group=<group>",
+    "description": "Run any kubectl command as another identity, if you hold impersonation rights.",
+    "example": "kubectl get pods -n payments --as=system:serviceaccount:payments:payments-api-sa",
+    "notes": "Not just for auth can-i - you can run real commands as another subject, which is the definitive test of whether a workload's permissions are right. Every impersonated request is recorded in the audit log with both identities, so this is traceable rather than sneaky.",
+    "danger": false,
+    "tags": [
+      "impersonation",
+      "rbac",
+      "testing",
+      "audit"
+    ]
+  },
+  {
+    "id": "get-nodes-wide-cluster",
+    "category": "Nodes & Cluster Management",
+    "command": "kubectl get nodes -o wide",
+    "description": "List nodes with IPs, OS image, kernel version, container runtime and kubelet version.",
+    "example": "kubectl get nodes -o wide",
+    "notes": "The first thing to check during an upgrade or a 'works on one node but not another' investigation. Mixed kubelet versions are normal mid-upgrade; mixed kernel or runtime versions are a common explanation for node-specific failures.",
+    "danger": false,
+    "tags": [
+      "nodes",
+      "inspect",
+      "cluster",
+      "upgrade"
+    ]
+  },
+  {
+    "id": "get-nodes-by-role",
+    "category": "Nodes & Cluster Management",
+    "command": "kubectl get nodes -l <label-selector>",
+    "description": "Filter nodes by label, for example by role, zone or instance type.",
+    "example": "kubectl get nodes -l node-role.kubernetes.io/control-plane",
+    "notes": "Standard labels worth knowing: node-role.kubernetes.io/<role>, topology.kubernetes.io/zone and /region, node.kubernetes.io/instance-type, and kubernetes.io/arch. These are what nodeSelector and topology spread constraints match on.",
+    "danger": false,
+    "tags": [
+      "nodes",
+      "labels",
+      "selector",
+      "topology"
+    ]
+  },
+  {
+    "id": "describe-node-full",
+    "category": "Nodes & Cluster Management",
+    "command": "kubectl describe node <node>",
+    "description": "Show a node's labels, taints, conditions, capacity, allocated requests and the pods it hosts.",
+    "example": "kubectl describe node ip-10-0-3-17.ec2.internal",
+    "notes": "The densest single view in Kubernetes. Read Conditions for pressure signals, Taints for why nothing schedules, and Allocated resources for how committed the node already is. 'Non-terminated Pods' lists every workload you would disturb by draining it.",
+    "danger": false,
+    "tags": [
+      "nodes",
+      "inspect",
+      "capacity",
+      "debug"
+    ]
+  },
+  {
+    "id": "cordon",
+    "category": "Nodes & Cluster Management",
+    "command": "kubectl cordon <node>",
+    "description": "Mark a node unschedulable so no new pods land on it, leaving existing pods running.",
+    "example": "kubectl cordon ip-10-0-3-17.ec2.internal",
+    "notes": "The gentle first step before maintenance. Nothing moves and nothing is disrupted - the node just stops accepting new work, showing as Ready,SchedulingDisabled. Always cordon before you investigate a suspect node so the scheduler stops adding to the problem.",
+    "danger": false,
+    "tags": [
+      "nodes",
+      "cordon",
+      "maintenance",
+      "scheduling"
+    ]
+  },
+  {
+    "id": "uncordon",
+    "category": "Nodes & Cluster Management",
+    "command": "kubectl uncordon <node>",
+    "description": "Make a node schedulable again after maintenance.",
+    "example": "kubectl uncordon ip-10-0-3-17.ec2.internal",
+    "notes": "Existing pods do not rebalance onto the node automatically - Kubernetes has no built-in rebalancer, so a freshly uncordoned node stays empty until new pods are created. That is normal, not a bug.",
+    "danger": false,
+    "tags": [
+      "nodes",
+      "cordon",
+      "maintenance",
+      "scheduling"
+    ]
+  },
+  {
+    "id": "drain",
+    "category": "Nodes & Cluster Management",
+    "command": "kubectl drain <node> --ignore-daemonsets",
+    "description": "Cordon a node and evict all its pods so it can be safely restarted or removed.",
+    "example": "kubectl drain ip-10-0-3-17.ec2.internal --ignore-daemonsets --delete-emptydir-data",
+    "notes": "--ignore-daemonsets is effectively mandatory, since DaemonSet pods cannot be rescheduled elsewhere and drain refuses to proceed without it. Drain uses the eviction API, so PodDisruptionBudgets are honoured - a PDB allowing zero disruptions will make this hang indefinitely. Pods with local emptyDir data need --delete-emptydir-data and will lose that data.",
+    "danger": true,
+    "tags": [
+      "nodes",
+      "drain",
+      "maintenance",
+      "eviction"
+    ]
+  },
+  {
+    "id": "drain-force",
+    "category": "Nodes & Cluster Management",
+    "command": "kubectl drain <node> --ignore-daemonsets --force",
+    "description": "Drain a node and also delete pods that no controller manages.",
+    "example": "kubectl drain ip-10-0-3-17.ec2.internal --ignore-daemonsets --delete-emptydir-data --force",
+    "notes": "--force is what deletes bare pods - pods with no ReplicaSet, Job or StatefulSet behind them. Those pods are gone permanently, because nothing exists to recreate them. Check for them first with `kubectl get pods -A --field-selector spec.nodeName=<node> -o wide` and see which have no owner.",
+    "danger": true,
+    "tags": [
+      "nodes",
+      "drain",
+      "force",
+      "data-loss"
+    ]
+  },
+  {
+    "id": "taint-node",
+    "category": "Nodes & Cluster Management",
+    "command": "kubectl taint nodes <node> <key>=<value>:<effect>",
+    "description": "Add a taint so only pods with a matching toleration will schedule on the node.",
+    "example": "kubectl taint nodes ip-10-0-3-17.ec2.internal dedicated=gpu:NoSchedule",
+    "notes": "Effects are NoSchedule (no new pods), PreferNoSchedule (soft) and NoExecute (evicts existing pods that do not tolerate it, immediately). NoExecute on a busy node is an instant mass eviction, so be sure before using it. Taints repel pods; nodeSelector and affinity attract them - you usually need both.",
+    "danger": true,
+    "tags": [
+      "nodes",
+      "taints",
+      "scheduling",
+      "eviction"
+    ]
+  },
+  {
+    "id": "taint-remove",
+    "category": "Nodes & Cluster Management",
+    "command": "kubectl taint nodes <node> <key>=<value>:<effect>-",
+    "description": "Remove a taint using the trailing-dash syntax.",
+    "example": "kubectl taint nodes ip-10-0-3-17.ec2.internal dedicated=gpu:NoSchedule-",
+    "notes": "You can drop the value and remove all taints with a given key and effect: `kubectl taint nodes <node> dedicated:NoSchedule-`. Removing a taint does not pull existing pods back onto the node - only new scheduling decisions are affected.",
+    "danger": false,
+    "tags": [
+      "nodes",
+      "taints",
+      "scheduling"
+    ]
+  },
+  {
+    "id": "get-node-taints",
+    "category": "Nodes & Cluster Management",
+    "command": "kubectl get nodes -o custom-columns=NAME:.metadata.name,TAINTS:.spec.taints[*].key",
+    "description": "List every node alongside its taint keys, in one table.",
+    "example": "kubectl get nodes -o custom-columns=NAME:.metadata.name,TAINTS:.spec.taints[*].key,UNSCHEDULABLE:.spec.unschedulable",
+    "notes": "Much faster than describing nodes one by one when a pod will not schedule. An empty TAINTS cell shows as <none>. Taints on control-plane nodes (node-role.kubernetes.io/control-plane:NoSchedule) are normal and intentional.",
+    "danger": false,
+    "tags": [
+      "nodes",
+      "taints",
+      "custom-columns",
+      "debug"
+    ]
+  },
+  {
+    "id": "label-node",
+    "category": "Nodes & Cluster Management",
+    "command": "kubectl label node <node> <key>=<value>",
+    "description": "Add a label to a node so workloads can target it with nodeSelector or affinity.",
+    "example": "kubectl label node ip-10-0-3-17.ec2.internal disktype=ssd",
+    "notes": "Labels under kubernetes.io/ and k8s.io/ are restricted - the kubelet cannot set most of them, so use your own domain for custom labels. Labelling a node does not move existing pods; only future scheduling decisions consider it.",
+    "danger": false,
+    "tags": [
+      "nodes",
+      "labels",
+      "scheduling"
+    ]
+  },
+  {
+    "id": "get-node-conditions",
+    "category": "Nodes & Cluster Management",
+    "command": "kubectl get nodes -o custom-columns=NAME:.metadata.name,READY:.status.conditions[?(@.type==\"Ready\")].status",
+    "description": "Show each node's Ready condition status in a compact table.",
+    "example": "kubectl get nodes -o custom-columns=NAME:.metadata.name,READY:.status.conditions[?(@.type==\"Ready\")].status,KUBELET:.status.nodeInfo.kubeletVersion",
+    "notes": "The [?(@.type==\"Ready\")] filter is a JSONPath predicate - the same syntax works for MemoryPressure, DiskPressure and PIDPressure. A Ready status of Unknown means the kubelet has stopped reporting entirely, which is different from a node that reports itself unhealthy.",
+    "danger": false,
+    "tags": [
+      "nodes",
+      "custom-columns",
+      "health",
+      "jsonpath"
+    ]
+  },
+  {
+    "id": "delete-node",
+    "category": "Nodes & Cluster Management",
+    "command": "kubectl delete node <node>",
+    "description": "Remove a node object from the cluster's registry.",
+    "example": "kubectl delete node ip-10-0-3-17.ec2.internal",
+    "notes": "This deletes the API object, not the machine - if the kubelet is still running it will simply re-register itself in seconds. Always drain first, then delete, then terminate the instance. Deleting a node object orphans its pods and forces them to be rescheduled.",
+    "danger": true,
+    "tags": [
+      "nodes",
+      "delete",
+      "maintenance"
+    ]
+  },
+  {
+    "id": "get-raw-readyz",
+    "category": "Nodes & Cluster Management",
+    "command": "kubectl get --raw '/readyz?verbose'",
+    "description": "Ask the API server for a per-check readiness breakdown.",
+    "example": "kubectl get --raw '/readyz?verbose'",
+    "notes": "Each individual health check is listed with ok or failed, including etcd connectivity and informer sync - far more informative than a plain /healthz that just says 'ok'. /livez?verbose is the liveness equivalent.",
+    "danger": false,
+    "tags": [
+      "cluster",
+      "health",
+      "api",
+      "raw"
+    ]
+  },
+  {
+    "id": "get-componentstatuses",
+    "category": "Nodes & Cluster Management",
+    "command": "kubectl get componentstatuses",
+    "description": "Show the legacy health summary for scheduler, controller-manager and etcd.",
+    "example": "kubectl get cs",
+    "notes": "Deprecated since 1.19 and broken or empty on most managed clusters, where the control plane is not reachable at the addresses it assumes. Use `kubectl get --raw '/readyz?verbose'` and your control-plane metrics instead - this command survives mainly in old runbooks.",
+    "danger": false,
+    "tags": [
+      "cluster",
+      "health",
+      "deprecation"
+    ]
+  },
+  {
+    "id": "output-yaml",
+    "category": "Output Formatting & JSONPath",
+    "command": "kubectl get <resource> <name> -o yaml",
+    "description": "Emit the complete object as YAML, including server-set defaults and live status.",
+    "example": "kubectl get deployment payments-api -o yaml",
+    "notes": "The default output is a summary table; -o yaml is the full truth. To turn it back into an appliable manifest you must remove status, metadata.uid, metadata.resourceVersion, metadata.generation, metadata.creationTimestamp and any cluster-assigned fields like spec.clusterIP.",
+    "danger": false,
+    "tags": [
+      "output",
+      "yaml",
+      "inspect"
+    ]
+  },
+  {
+    "id": "output-json",
+    "category": "Output Formatting & JSONPath",
+    "command": "kubectl get <resource> -o json",
+    "description": "Emit objects as JSON, the format to pipe into jq.",
+    "example": "kubectl get pods -o json | jq '.items | length'",
+    "notes": "A list request wraps results in a List object with the objects under .items; a single named request returns the object directly. Handling both shapes is why so many scripts break when they go from one pod to many.",
+    "danger": false,
+    "tags": [
+      "output",
+      "json",
+      "jq",
+      "scripting"
+    ]
+  },
+  {
+    "id": "output-name-format",
+    "category": "Output Formatting & JSONPath",
+    "command": "kubectl get <resource> -o name",
+    "description": "Print only type/name identifiers, one per line.",
+    "example": "kubectl get pods -l app=payments-api -o name",
+    "notes": "The output is valid input to other kubectl commands, so `kubectl get ... -o name | xargs kubectl delete` works without any parsing. Prefer it over awk-ing column one.",
+    "danger": false,
+    "tags": [
+      "output",
+      "scripting",
+      "pipeline"
+    ]
+  },
+  {
+    "id": "jsonpath-single-field",
+    "category": "Output Formatting & JSONPath",
+    "command": "kubectl get <resource> <name> -o jsonpath='{<path>}'",
+    "description": "Extract a single field from an object using a JSONPath expression.",
+    "example": "kubectl get pod payments-api-7d9f8-x2klm -o jsonpath='{.status.podIP}'",
+    "notes": "kubectl's JSONPath is a subset of the full spec: no filters on arbitrary expressions, no functions beyond a few. Output has no trailing newline, so append {\"\\n\"} or `; echo` when you want one. A path that matches nothing prints nothing and still exits zero.",
+    "danger": false,
+    "tags": [
+      "jsonpath",
+      "output",
+      "extract"
+    ]
+  },
+  {
+    "id": "jsonpath-all-items",
+    "category": "Output Formatting & JSONPath",
+    "command": "kubectl get <resource> -o jsonpath='{.items[*].<field>}'",
+    "description": "Pull one field from every object in a list, space-separated.",
+    "example": "kubectl get pods -o jsonpath='{.items[*].metadata.name}'",
+    "notes": "[*] iterates a list. Results come out space-separated on one line, so pipe through `tr ' ' '\\n'` to get one per line. Use the range form when you need several fields per object.",
+    "danger": false,
+    "tags": [
+      "jsonpath",
+      "output",
+      "list"
+    ]
+  },
+  {
+    "id": "jsonpath-range",
+    "category": "Output Formatting & JSONPath",
+    "command": "kubectl get <resource> -o jsonpath='{range .items[*]}{<field1>}{\"\\t\"}{<field2>}{\"\\n\"}{end}'",
+    "description": "Loop over a list and emit several fields per object as a formatted line.",
+    "example": "kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{\"\\t\"}{.status.podIP}{\"\\t\"}{.spec.nodeName}{\"\\n\"}{end}'",
+    "notes": "range/end is the construct that turns JSONPath from a field extractor into a report generator. Literal text goes in double quotes inside the braces, including \\t and \\n. Wrap the whole expression in single quotes so your shell leaves the double quotes alone.",
+    "danger": false,
+    "tags": [
+      "jsonpath",
+      "range",
+      "output",
+      "report"
+    ]
+  },
+  {
+    "id": "jsonpath-filter",
+    "category": "Output Formatting & JSONPath",
+    "command": "kubectl get <resource> -o jsonpath='{.items[?(@.<field>==\"<value>\")].metadata.name}'",
+    "description": "Filter a list with a JSONPath predicate and print a field from the matches.",
+    "example": "kubectl get nodes -o jsonpath='{.items[?(@.status.conditions[-1:].status==\"True\")].metadata.name}'",
+    "notes": "@ refers to the current element. Supported comparisons are ==, != and the numeric operators; there is no regex and no and/or, so complex filters belong in jq instead. Quote string literals with double quotes inside the single-quoted expression.",
+    "danger": false,
+    "tags": [
+      "jsonpath",
+      "filter",
+      "advanced"
+    ]
+  },
+  {
+    "id": "jsonpath-escape-dots",
+    "category": "Output Formatting & JSONPath",
+    "command": "kubectl get <resource> <name> -o jsonpath='{.metadata.annotations.<escaped-key>}'",
+    "description": "Read a label or annotation whose key contains dots or slashes, by escaping the dots.",
+    "example": "kubectl get deployment payments-api -o jsonpath='{.metadata.annotations.kubernetes\\.io/change-cause}'",
+    "notes": "Dots inside a key must be escaped with a backslash, otherwise JSONPath treats them as path separators - and inside a shell single-quoted string that means one backslash, but two if you use double quotes. The alternative bracket form {.metadata.annotations['kubernetes.io/change-cause']} avoids the problem entirely.",
+    "danger": false,
+    "tags": [
+      "jsonpath",
+      "annotations",
+      "escaping",
+      "gotcha"
+    ]
+  },
+  {
+    "id": "custom-columns",
+    "category": "Output Formatting & JSONPath",
+    "command": "kubectl get <resource> -o custom-columns=<HEADER>:<jsonpath>,<HEADER>:<jsonpath>",
+    "description": "Define your own table columns from JSONPath expressions.",
+    "example": "kubectl get pods -o custom-columns=NAME:.metadata.name,NODE:.spec.nodeName,IMAGE:.spec.containers[*].image,STATUS:.status.phase",
+    "notes": "Cleaner than jsonpath+awk for anything a human will read, and it handles column alignment for you. Paths here are written without surrounding braces. A path that matches nothing renders as <none>. No spaces are allowed around the commas.",
+    "danger": false,
+    "tags": [
+      "custom-columns",
+      "output",
+      "report"
+    ]
+  },
+  {
+    "id": "custom-columns-resources",
+    "category": "Output Formatting & JSONPath",
+    "command": "kubectl get pods -o custom-columns=NAME:.metadata.name,CPU_REQ:.spec.containers[*].resources.requests.cpu,MEM_REQ:.spec.containers[*].resources.requests.memory",
+    "description": "Build a table of pod resource requests to find workloads with none set.",
+    "example": "kubectl get pods -A -o custom-columns=NS:.metadata.namespace,NAME:.metadata.name,CPU_REQ:.spec.containers[*].resources.requests.cpu,MEM_LIM:.spec.containers[*].resources.limits.memory",
+    "notes": "Pods showing <none> have no requests, which means the scheduler treats them as free and they are first in line for eviction under memory pressure - their QoS class is BestEffort. This one query surfaces most of a cluster's capacity-planning problems.",
+    "danger": false,
+    "tags": [
+      "custom-columns",
+      "resources",
+      "capacity",
+      "audit"
+    ]
+  },
+  {
+    "id": "go-template",
+    "category": "Output Formatting & JSONPath",
+    "command": "kubectl get <resource> -o go-template='<template>'",
+    "description": "Format output with a Go text/template, for logic JSONPath cannot express.",
+    "example": "kubectl get pods -o go-template='{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'",
+    "notes": "Use this when you need conditionals, string functions or base64decode - the last of which is the only built-in way to decode a Secret without shelling out. Templates are verbose, so reach for custom-columns first and go-template only when it cannot do the job.",
+    "danger": false,
+    "tags": [
+      "go-template",
+      "output",
+      "advanced"
+    ]
+  },
+  {
+    "id": "sort-by-jsonpath",
+    "category": "Output Formatting & JSONPath",
+    "command": "kubectl get <resource> --sort-by=<jsonpath>",
+    "description": "Sort table output by any field, ascending.",
+    "example": "kubectl get pods -A --sort-by=.metadata.creationTimestamp",
+    "notes": "The expression is a JSONPath without braces, evaluated against each object. Sorting is client-side on the fetched list, and there is no descending flag - pipe to `tac`, keeping in mind that reverses the header row too.",
+    "danger": false,
+    "tags": [
+      "sort",
+      "output",
+      "jsonpath"
+    ]
+  },
+  {
+    "id": "jq-pipeline",
+    "category": "Output Formatting & JSONPath",
+    "command": "kubectl get <resource> -o json | jq -r '<expression>'",
+    "description": "Use jq for filtering and reshaping that kubectl's own formatters cannot handle.",
+    "example": "kubectl get pods -A -o json | jq -r '.items[] | select(.status.phase!=\"Running\") | \"\\(.metadata.namespace)/\\(.metadata.name) \\(.status.phase)\"'",
+    "notes": "jq gives you boolean logic, regex, arithmetic and grouping, none of which JSONPath has. -r strips the JSON quotes from string output. Remember that jq runs on data already transferred, so filtering server-side with a field selector first is cheaper on large clusters.",
+    "danger": false,
+    "tags": [
+      "jq",
+      "json",
+      "scripting",
+      "advanced"
+    ]
+  },
+  {
+    "id": "output-show-managed-fields",
+    "category": "Output Formatting & JSONPath",
+    "command": "kubectl get <resource> <name> -o yaml --show-managed-fields",
+    "description": "Include the managedFields metadata that records which controller owns which field.",
+    "example": "kubectl get deployment payments-api -o yaml --show-managed-fields",
+    "notes": "Hidden by default since 1.21 because it is enormous and unreadable. Turn it on when debugging server-side apply conflicts or when you need to know which controller is fighting you over a field - the manager names tell you exactly who set what.",
+    "danger": false,
+    "tags": [
+      "output",
+      "server-side-apply",
+      "debug",
+      "advanced"
+    ]
+  },
+  {
+    "id": "get-raw-formatted",
+    "category": "Output Formatting & JSONPath",
+    "command": "kubectl get --raw <path> | jq",
+    "description": "Fetch a raw API response and pretty-print it.",
+    "example": "kubectl get --raw /api/v1/namespaces/payments/pods | jq -r '.items[].metadata.name'",
+    "notes": "Raw output is a single unformatted JSON line, so piping through jq is effectively mandatory. Use this to reach API paths kubectl has no resource type for, or to see exactly what the server returns before kubectl's client-side processing.",
+    "danger": false,
+    "tags": [
+      "raw",
+      "api",
+      "jq",
+      "advanced"
+    ]
+  },
+  {
+    "id": "delete-resource",
+    "category": "Cleanup & Deletion",
+    "command": "kubectl delete <resource> <name>",
+    "description": "Delete a named object.",
+    "example": "kubectl delete pod payments-api-7d9f8-x2klm",
+    "notes": "Deleting a pod that belongs to a Deployment or StatefulSet just makes the controller create a replacement - which is exactly the point when you want to restart one misbehaving replica. To actually remove a workload you must delete the controller, not its pods.",
+    "danger": true,
+    "tags": [
+      "delete",
+      "pods",
+      "basics"
+    ]
+  },
+  {
+    "id": "delete-from-file",
+    "category": "Cleanup & Deletion",
+    "command": "kubectl delete -f <file.yaml>",
+    "description": "Delete exactly the resources described in a manifest.",
+    "example": "kubectl delete -f ./manifests/ -R",
+    "notes": "Much safer than deleting by name because the manifest is an explicit, reviewable list of what will go. Add --ignore-not-found so it succeeds when some objects are already gone, which makes teardown scripts idempotent.",
+    "danger": true,
+    "tags": [
+      "delete",
+      "file",
+      "teardown"
+    ]
+  },
+  {
+    "id": "delete-kustomize",
+    "category": "Cleanup & Deletion",
+    "command": "kubectl delete -k <directory>",
+    "description": "Delete everything a kustomization renders.",
+    "example": "kubectl delete -k ./overlays/staging",
+    "notes": "Deletes exactly what `kubectl apply -k` on the same directory would create, which makes environment teardown symmetrical. Render with `kubectl kustomize` first if you want to see the list before it disappears.",
+    "danger": true,
+    "tags": [
+      "delete",
+      "kustomize",
+      "teardown"
+    ]
+  },
+  {
+    "id": "delete-by-label",
+    "category": "Cleanup & Deletion",
+    "command": "kubectl delete <resource> -l <label-selector>",
+    "description": "Delete every object of a type matching a label selector.",
+    "example": "kubectl delete pods -l app=payments-api,version=canary",
+    "notes": "Test the selector with `kubectl get` before you run the delete - the two commands take identical selectors, so there is no excuse for guessing. A typo that matches more broadly than intended is the classic way to delete production.",
+    "danger": true,
+    "tags": [
+      "delete",
+      "labels",
+      "bulk",
+      "risky"
+    ]
+  },
+  {
+    "id": "delete-all-of-type",
+    "category": "Cleanup & Deletion",
+    "command": "kubectl delete <resource> --all -n <namespace>",
+    "description": "Delete every object of one type in a namespace.",
+    "example": "kubectl delete pods --all -n staging",
+    "notes": "--all means every object of that type in the namespace, and there is no confirmation prompt. Always state -n explicitly rather than relying on your current context, because this is precisely the command you do not want to run in the wrong namespace.",
+    "danger": true,
+    "tags": [
+      "delete",
+      "bulk",
+      "namespace",
+      "risky"
+    ]
+  },
+  {
+    "id": "delete-all-in-namespace",
+    "category": "Cleanup & Deletion",
+    "command": "kubectl delete all --all -n <namespace>",
+    "description": "Delete the common workload and service resources in a namespace.",
+    "example": "kubectl delete all --all -n staging",
+    "notes": "Misleading in both directions: 'all' is the same limited shortlist as `kubectl get all`, so ConfigMaps, Secrets, PVCs, Ingresses and CRDs survive - while everything running is destroyed instantly. If you truly want the namespace empty, delete the namespace instead.",
+    "danger": true,
+    "tags": [
+      "delete",
+      "bulk",
+      "namespace",
+      "risky",
+      "gotcha"
+    ]
+  },
+  {
+    "id": "delete-namespace",
+    "category": "Cleanup & Deletion",
+    "command": "kubectl delete namespace <name>",
+    "description": "Delete a namespace and everything inside it.",
+    "example": "kubectl delete namespace staging",
+    "notes": "Irreversible and total: every object in the namespace goes, including PVCs, which for a Delete-reclaim StorageClass destroys the underlying disks. Deletion is asynchronous and can take minutes; if it sticks in Terminating, some resource has a finalizer nobody is clearing.",
+    "danger": true,
+    "tags": [
+      "delete",
+      "namespace",
+      "data-loss",
+      "risky"
+    ]
+  },
+  {
+    "id": "delete-force-grace-zero",
+    "category": "Cleanup & Deletion",
+    "command": "kubectl delete pod <name> --grace-period=0 --force",
+    "description": "Remove a pod object from the API immediately without waiting for the kubelet to confirm.",
+    "example": "kubectl delete pod payments-api-7d9f8-x2klm --grace-period=0 --force",
+    "notes": "This deletes the API record, not necessarily the running container - on an unreachable node the process may keep running and keep writing to storage. For StatefulSets that is genuinely dangerous: the controller will start a replacement with the same identity and volume, giving you two writers. Only use it on a node you know is truly dead.",
+    "danger": true,
+    "tags": [
+      "delete",
+      "force",
+      "stuck",
+      "data-loss",
+      "risky"
+    ]
+  },
+  {
+    "id": "delete-now",
+    "category": "Cleanup & Deletion",
+    "command": "kubectl delete <resource> <name> --now",
+    "description": "Delete with a one-second grace period instead of the pod's configured value.",
+    "example": "kubectl delete pod payments-api-7d9f8-x2klm --now",
+    "notes": "A middle ground between a graceful delete and --force: the kubelet is still told to stop the container, so you do not risk a zombie process, but you skip a long terminationGracePeriodSeconds. Prefer this to --grace-period=0 --force when you are just impatient.",
+    "danger": true,
+    "tags": [
+      "delete",
+      "grace-period",
+      "pods"
+    ]
+  },
+  {
+    "id": "delete-cascade-orphan",
+    "category": "Cleanup & Deletion",
+    "command": "kubectl delete <resource> <name> --cascade=orphan",
+    "description": "Delete a controller but leave the objects it owns running.",
+    "example": "kubectl delete deployment payments-api --cascade=orphan",
+    "notes": "The pods keep running with no supervisor - nothing will restart or reschedule them, and a matching new Deployment may adopt them via labels, which can be either a clever migration trick or a nasty surprise. --cascade=background (the default) deletes children asynchronously; --cascade=foreground waits for them.",
+    "danger": true,
+    "tags": [
+      "delete",
+      "cascade",
+      "orphan",
+      "advanced"
+    ]
+  },
+  {
+    "id": "delete-field-selector",
+    "category": "Cleanup & Deletion",
+    "command": "kubectl delete <resource> --field-selector <field>=<value>",
+    "description": "Delete objects matching a server-side field selector.",
+    "example": "kubectl delete pods --field-selector status.phase=Succeeded -A",
+    "notes": "The tidy way to clear out completed Job pods that have accumulated. Run the identical `kubectl get` first to see the list. Configure ttlSecondsAfterFinished on your Jobs so you do not have to do this by hand.",
+    "danger": true,
+    "tags": [
+      "delete",
+      "field-selector",
+      "cleanup",
+      "jobs"
+    ]
+  },
+  {
+    "id": "delete-piped-names",
+    "category": "Cleanup & Deletion",
+    "command": "kubectl get <resource> -o name -l <selector> | xargs kubectl delete",
+    "description": "Select objects first, review the list, then delete exactly those.",
+    "example": "kubectl get pods -o name --field-selector status.phase=Failed | xargs -r kubectl delete",
+    "notes": "The safe pattern: run the `get` alone first and read the output, then add the pipe. -r on xargs stops it running kubectl with no arguments when nothing matched, which would otherwise produce a confusing error.",
+    "danger": true,
+    "tags": [
+      "delete",
+      "pipeline",
+      "safe-pattern",
+      "scripting"
+    ]
+  },
+  {
+    "id": "delete-stuck-finalizer",
+    "category": "Cleanup & Deletion",
+    "command": "kubectl patch <resource> <name> --type=merge -p '{\"metadata\":{\"finalizers\":null}}'",
+    "description": "Strip finalizers from an object stuck in Terminating so the API server can remove it.",
+    "example": "kubectl patch pvc data-postgres-0 --type=merge -p '{\"metadata\":{\"finalizers\":null}}'",
+    "notes": "A last resort. Finalizers exist so a controller can clean up external resources - cloud disks, load balancers, DNS records - and removing them deletes the Kubernetes object while leaving that infrastructure orphaned and still billing you. Find out why the finalizer is not clearing before reaching for this.",
+    "danger": true,
+    "tags": [
+      "delete",
+      "finalizers",
+      "stuck",
+      "last-resort",
+      "risky"
+    ]
+  },
+  {
+    "id": "delete-stuck-namespace",
+    "category": "Cleanup & Deletion",
+    "command": "kubectl get namespace <name> -o json | jq 'del(.spec.finalizers)' | kubectl replace --raw /api/v1/namespaces/<name>/finalize -f -",
+    "description": "Force-clear a namespace wedged in Terminating by writing directly to its finalize subresource.",
+    "example": "kubectl get namespace staging -o json | jq 'del(.spec.finalizers)' | kubectl replace --raw /api/v1/namespaces/staging/finalize -f -",
+    "notes": "Needed because a namespace's finalizer cannot be patched the normal way. Before running it, find the real cause: `kubectl api-resources --verbs=list --namespaced -o name | xargs -n1 kubectl get --show-kind --ignore-not-found -n <name>` lists what is still in there, usually a custom resource whose operator has been uninstalled. Forcing it leaves those objects orphaned in etcd.",
+    "danger": true,
+    "tags": [
+      "delete",
+      "namespace",
+      "finalizers",
+      "stuck",
+      "last-resort"
+    ]
+  },
+  {
+    "id": "delete-completed-jobs",
+    "category": "Cleanup & Deletion",
+    "command": "kubectl delete jobs --field-selector status.successful=1",
+    "description": "Remove Jobs that have completed successfully, along with their pods.",
+    "example": "kubectl delete jobs --field-selector status.successful=1 -n batch",
+    "notes": "Deleting the Job also deletes its pods and therefore its logs, so capture anything you need first. Setting spec.ttlSecondsAfterFinished on the Job is the proper fix - it lets the controller clean up on a schedule instead of you remembering to.",
+    "danger": true,
+    "tags": [
+      "delete",
+      "jobs",
+      "cleanup",
+      "batch"
+    ]
+  },
+  {
+    "id": "delete-pvc",
+    "category": "Cleanup & Deletion",
+    "command": "kubectl delete pvc <name>",
+    "description": "Delete a PersistentVolumeClaim.",
+    "example": "kubectl delete pvc data-postgres-0",
+    "notes": "Whether your data survives depends entirely on the PV's reclaim policy: Delete destroys the underlying disk, Retain keeps the PV around in Released state for manual recovery. Check with `kubectl get pv` before deleting. A PVC still mounted by a running pod will sit in Terminating until that pod goes.",
+    "danger": true,
+    "tags": [
+      "delete",
+      "storage",
+      "pvc",
+      "data-loss"
+    ]
+  },
+  {
+    "id": "delete-crd-warning",
+    "category": "Cleanup & Deletion",
+    "command": "kubectl delete crd <name>",
+    "description": "Delete a CustomResourceDefinition and, with it, every custom resource of that kind.",
+    "example": "kubectl delete crd certificates.cert-manager.io",
+    "notes": "Cluster-wide and instant: deleting a CRD removes all its instances in every namespace, with no confirmation and no undo. Inventory them first with `kubectl get <kind> -A`. Uninstalling an operator by deleting its CRDs is how people accidentally destroy every certificate or database in a cluster.",
+    "danger": true,
+    "tags": [
+      "delete",
+      "crd",
+      "cluster-wide",
+      "risky",
+      "data-loss"
+    ]
+  },
+  {
+    "id": "apply-prune-warning",
+    "category": "Cleanup & Deletion",
+    "command": "kubectl apply -f <directory> --prune -l <selector> --dry-run=client",
+    "description": "Preview which objects a pruning apply would delete before doing it for real.",
+    "example": "kubectl apply -f ./manifests/ --prune -l app.kubernetes.io/managed-by=my-pipeline --dry-run=client",
+    "notes": "Always run the dry-run first: prune deletes anything carrying the label that is not in your input, so an empty or wrong directory means it deletes everything the label matches. Prune has been alpha/beta for years, ignores types outside its allowlist unless you pass --prune-allowlist, and is best replaced by a proper GitOps controller.",
+    "danger": true,
+    "tags": [
+      "prune",
+      "delete",
+      "apply",
+      "risky",
+      "gitops"
+    ]
+  }
+]

@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+  namespace: k8s-learn
+data:
+  # Non-secret configuration only. Everything here is visible to anyone who can
+  # read the namespace, so nothing sensitive belongs in a ConfigMap.
+  NODE_ENV: "production"
+  PORT: "4000"
+  LOG_LEVEL: "info"
+  DB_POOL_MAX: "10"
+  ACCESS_TOKEN_TTL: "15m"
+  REFRESH_TOKEN_DAYS: "30"
+  COOKIE_SECURE: "false"   # set to "true" once the Ingress terminates TLS
+  SEED_ON_START: "true"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: api-secrets
+  namespace: k8s-learn
+type: Opaque
+stringData:
+  # ---------------------------------------------------------------------------
+  # THESE ARE DEVELOPMENT VALUES. Change them before this is reachable by anyone.
+  #
+  # A Secret is only base64-encoded, NOT encrypted — `kubectl get secret -o yaml`
+  # plus `base64 -d` reveals it. Real protection comes from RBAC on the Secret,
+  # encryption-at-rest on etcd, and keeping this file out of git. Since you are
+  # already running External Secrets Operator in your other repo, the natural next
+  # step is replacing this whole object with an ExternalSecret.
+  # ---------------------------------------------------------------------------
+  POSTGRES_PASSWORD: "change-me-in-a-real-cluster"
+  JWT_SECRET: "dev-only-secret-replace-me-with-32-plus-random-chars"
+  DATABASE_URL: "postgres://k8slearn:change-me-in-a-real-cluster@postgres:5432/k8slearn"
