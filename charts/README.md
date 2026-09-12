@@ -19,5 +19,4 @@ helm install jenkins ./jenkins \
 
 helm upgrade --install jenkins ./jenkins \
   --namespace jenkins \
-  --create-namespace \
-  --dry-run
+  --create-namespace
